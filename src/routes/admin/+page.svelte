@@ -41,6 +41,9 @@
 	<!-- Room List -->
 	<div class="space-y-3">
 		<h2 class="text-lg font-semibold text-gray-800">ルーム一覧</h2>
+		{#if form?.error}
+			<p class="text-sm text-red-600">{form.error}</p>
+		{/if}
 		{#if data.rooms.length === 0}
 			<p class="text-gray-500 text-sm py-8 text-center">ルームがありません</p>
 		{:else}
@@ -66,12 +69,15 @@
 						>
 							詳細
 						</a>
-						<form method="POST" action="?/delete" use:enhance>
+						<form method="POST" action="?/delete" use:enhance={({ cancel }) => {
+							if (!confirm('このルームを削除しますか？')) {
+								cancel();
+							}
+						}}>
 							<input type="hidden" name="roomId" value={room.id} />
 							<button
 								type="submit"
 								class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg"
-								onclick={(e) => { if (!confirm('このルームを削除しますか？')) e.preventDefault(); }}
 							>
 								削除
 							</button>
