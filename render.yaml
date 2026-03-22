@@ -3,6 +3,7 @@ services:
     name: roomchat
     runtime: node
     plan: free
+    branch: main
     healthCheckPath: /
     buildCommand: npm install && npm run build
     startCommand: node build
