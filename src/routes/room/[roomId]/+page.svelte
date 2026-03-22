@@ -13,7 +13,13 @@
 	const NICKNAME_CHANGE_WINDOW_MS = 5 * 60 * 1000;
 	let sseMessages = $state<Message[]>([]);
 	const knownMessageIds = new Set<string>(data.messages.map((m: Message) => m.id));
-	let allMessages = $derived<Message[]>([...data.messages, ...sseMessages]);
+	let nicknameUpdates = $state<Record<string, string>>({});
+	let allMessages = $derived<Message[]>(
+		[...data.messages, ...sseMessages].map((msg) => {
+			const updated = nicknameUpdates[msg.participantId];
+			return updated && updated !== msg.nickname ? { ...msg, nickname: updated } : msg;
+		})
+	);
 	let viewMode = $state<ChatViewMode>('slack');
 	let showQrOverlay = $state(false);
 	let sendError = $state('');
@@ -55,15 +61,8 @@
 				payload = JSON.parse(event.data);
 			} catch { return; }
 			const { participantId, newNickname } = payload;
-			// Update nickname in existing messages
-			for (const msg of data.messages) {
-				if (msg.participantId === participantId) {
-					msg.nickname = newNickname;
-				}
-			}
-			sseMessages = sseMessages.map((msg) =>
-				msg.participantId === participantId ? { ...msg, nickname: newNickname } : msg
-			);
+			// Track nickname update reactively (applied via derived allMessages)
+			nicknameUpdates = { ...nicknameUpdates, [participantId]: newNickname };
 			// Update own nickname display if it's us
 			if (participantId === data.participant.id) {
 				currentNickname = newNickname;

@@ -57,3 +57,13 @@ export const messageRateLimiter = new RateLimiter();
 g[globalKey] = messageRateLimiter;
 
 export const MESSAGE_RATE_LIMIT = { maxRequests: 10, windowMs: 10_000 };
+
+// 3 nickname changes per 60 seconds per participant
+const nicknameGlobalKey = '__roomchat_nickname_rate_limiter__';
+if (g[nicknameGlobalKey]) {
+	(g[nicknameGlobalKey] as RateLimiter).destroy();
+}
+export const nicknameRateLimiter = new RateLimiter();
+g[nicknameGlobalKey] = nicknameRateLimiter;
+
+export const NICKNAME_RATE_LIMIT = { maxRequests: 3, windowMs: 60_000 };

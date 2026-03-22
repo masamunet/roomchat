@@ -74,11 +74,11 @@ class SSEManager {
 		}
 	}
 
-	broadcastNicknameChange(roomId: string, participantId: string, oldNickname: string, newNickname: string): void {
+	broadcastNicknameChange(roomId: string, participantId: string, newNickname: string): void {
 		const infos = this.rooms.get(roomId);
 		if (!infos) return;
 
-		const payload = { participantId, oldNickname, newNickname };
+		const payload = { participantId, newNickname };
 		const data = `event: nickname_changed\ndata: ${JSON.stringify(payload)}\n\n`;
 		const encoded = encoder.encode(data);
 

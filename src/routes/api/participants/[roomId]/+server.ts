@@ -4,9 +4,8 @@ import { getRoomById } from '$lib/server/repositories/room.js';
 import { sseManager } from '$lib/server/sse/manager.js';
 import { parseRoomParticipants } from '$lib/server/cookies.js';
 import { isValidUUID } from '$lib/server/validation.js';
+import { nicknameRateLimiter, NICKNAME_RATE_LIMIT } from '$lib/server/rate-limit.js';
 import type { RequestHandler } from './$types';
-
-const NICKNAME_CHANGE_WINDOW_MS = 5 * 60 * 1000;
 
 export const PATCH: RequestHandler = async ({ params, request, cookies }) => {
 	if (!isValidUUID(params.roomId)) {
@@ -20,7 +19,7 @@ export const PATCH: RequestHandler = async ({ params, request, cookies }) => {
 
 	const roomParticipants = parseRoomParticipants(cookies.get('room_participants'));
 	const participantId = roomParticipants[params.roomId];
-	if (!participantId) {
+	if (!participantId || !isValidUUID(participantId)) {
 		error(401, '入室が必要です');
 	}
 
@@ -29,10 +28,9 @@ export const PATCH: RequestHandler = async ({ params, request, cookies }) => {
 		error(403, 'このルームに参加していません');
 	}
 
-	// Check 5-minute window
-	const elapsed = Date.now() - participant.joinedAt.getTime();
-	if (elapsed > NICKNAME_CHANGE_WINDOW_MS) {
-		error(403, 'ニックネームの変更可能時間（入室後5分）を過ぎています');
+	// Rate limiting
+	if (!nicknameRateLimiter.check(participantId, NICKNAME_RATE_LIMIT.maxRequests, NICKNAME_RATE_LIMIT.windowMs)) {
+		error(429, 'ニックネームの変更が速すぎます。少し待ってからお試しください');
 	}
 
 	let body: Record<string, unknown>;
@@ -42,7 +40,10 @@ export const PATCH: RequestHandler = async ({ params, request, cookies }) => {
 		error(400, '不正なリクエスト形式です');
 	}
 
-	const nickname = (typeof body.nickname === 'string' ? body.nickname : '').trim();
+	// Sanitize: trim and strip Unicode control characters
+	const nickname = (typeof body.nickname === 'string' ? body.nickname : '')
+		.trim()
+		.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '');
 
 	if (!nickname || nickname.length === 0) {
 		error(400, 'ニックネームを入力してください');
@@ -56,6 +57,7 @@ export const PATCH: RequestHandler = async ({ params, request, cookies }) => {
 		return json(participant);
 	}
 
+	// updateParticipantNickname enforces 5-minute window atomically in SQL
 	let updated;
 	try {
 		updated = await updateParticipantNickname(participantId, nickname);
@@ -69,10 +71,10 @@ export const PATCH: RequestHandler = async ({ params, request, cookies }) => {
 	}
 
 	if (!updated) {
-		error(500, 'ニックネームの更新に失敗しました');
+		error(403, 'ニックネームの変更可能時間（入室後5分）を過ぎています');
 	}
 
-	sseManager.broadcastNicknameChange(params.roomId, participantId, participant.nickname, nickname);
+	sseManager.broadcastNicknameChange(params.roomId, participantId, nickname);
 
 	return json(updated);
 };
