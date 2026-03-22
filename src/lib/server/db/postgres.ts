@@ -10,7 +10,7 @@ export async function createPostgresClient(connectionString: string): Promise<Db
 			max: 10,
 			idleTimeoutMillis: 30_000,
 			connectionTimeoutMillis: 5_000,
-			ssl: process.env.NODE_ENV === 'production' ? true : false
+			ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 		});
 
 		pool.on('error', (err) => {
