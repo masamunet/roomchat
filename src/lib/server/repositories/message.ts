@@ -59,3 +59,16 @@ export async function getMessagesByRoom(roomId: string, limit = 100, before?: st
 	const result = await db.query<MessageRow>(sql, params);
 	return result.rows.map(toMessage).reverse();
 }
+
+export async function getAllMessagesByRoom(roomId: string): Promise<Message[]> {
+	const db = await getDb();
+	const result = await db.query<MessageRow>(
+		`SELECT m.*, p.nickname
+		 FROM messages m
+		 JOIN participants p ON m.participant_id = p.id
+		 WHERE m.room_id = $1
+		 ORDER BY m.created_at ASC`,
+		[roomId]
+	);
+	return result.rows.map(toMessage);
+}

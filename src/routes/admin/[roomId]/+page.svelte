@@ -56,6 +56,15 @@
 			入室する
 		</a>
 
+		<!-- CSV Download -->
+		<a
+			href="/api/rooms/{data.room.id}/logs.csv"
+			download
+			class="block w-full text-center px-4 py-3 mt-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200"
+		>
+			ログをCSVダウンロード
+		</a>
+
 		<!-- Participants -->
 		{#if data.participants.length > 0}
 			<div class="mt-6 pt-4 border-t border-gray-100">
