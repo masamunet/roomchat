@@ -61,6 +61,7 @@
 			while (liveRegion.childNodes.length > 20) {
 				liveRegion.firstChild?.remove();
 			}
+			// Timer not tracked in activeTimeouts — onDestroy clears liveRegion.textContent
 			setTimeout(() => announcement.remove(), 10_000);
 		}
 
