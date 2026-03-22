@@ -40,6 +40,15 @@ export async function getParticipantById(participantId: string): Promise<Partici
 	return result.rows.length > 0 ? toParticipant(result.rows[0]) : null;
 }
 
+export async function updateParticipantNickname(participantId: string, newNickname: string): Promise<Participant | null> {
+	const db = await getDb();
+	const result = await db.query<ParticipantRow>(
+		`UPDATE participants SET nickname = $2 WHERE id = $1 RETURNING *`,
+		[participantId, newNickname]
+	);
+	return result.rows.length > 0 ? toParticipant(result.rows[0]) : null;
+}
+
 export async function getParticipantsByRoom(roomId: string): Promise<Participant[]> {
 	const db = await getDb();
 	const result = await db.query<ParticipantRow>(
