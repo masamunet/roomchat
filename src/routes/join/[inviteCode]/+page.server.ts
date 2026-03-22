@@ -4,6 +4,7 @@ import { getRoomByInviteCode } from '$lib/server/repositories/room.js';
 import { createParticipant, getParticipantById } from '$lib/server/repositories/participant.js';
 import { parseRoomParticipants, encodeRoomParticipants } from '$lib/server/cookies.js';
 import { isValidInviteCode } from '$lib/server/validation.js';
+import { joinRateLimiter, JOIN_RATE_LIMIT } from '$lib/server/rate-limit.js';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params, cookies }) => {
@@ -30,7 +31,12 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, params, cookies }) => {
+	default: async ({ request, params, cookies, getClientAddress }) => {
+		const clientIp = getClientAddress();
+		if (!joinRateLimiter.check(clientIp, JOIN_RATE_LIMIT.maxRequests, JOIN_RATE_LIMIT.windowMs)) {
+			return fail(429, { error: 'アクセスが集中しています。しばらくしてからお試しください。' });
+		}
+
 		const code = params.inviteCode.toUpperCase();
 		if (!isValidInviteCode(code)) {
 			return fail(400, { error: '無効な招待コードです' });
