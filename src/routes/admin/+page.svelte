@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 
 	let { data, form } = $props();
+
+	let deleteTargetRoomId = $state<string | null>(null);
+	let deleteFormRefs: Record<string, HTMLFormElement> = {};
 </script>
 
 <svelte:head>
@@ -66,12 +70,12 @@
 						>
 							詳細
 						</a>
-						<form method="POST" action="?/delete" use:enhance>
+						<form method="POST" action="?/delete" use:enhance bind:this={deleteFormRefs[room.id]}>
 							<input type="hidden" name="roomId" value={room.id} />
 							<button
-								type="submit"
+								type="button"
 								class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg"
-								onclick={(e) => { if (!confirm('このルームを削除しますか？')) e.preventDefault(); }}
+								onclick={() => { deleteTargetRoomId = room.id; }}
 							>
 								削除
 							</button>
@@ -82,3 +86,18 @@
 		{/if}
 	</div>
 </div>
+
+<ConfirmDialog
+	open={deleteTargetRoomId !== null}
+	title="ルームの削除"
+	message="このルームを削除しますか？この操作は取り消せません。"
+	confirmLabel="削除"
+	cancelLabel="キャンセル"
+	onConfirm={() => {
+		if (deleteTargetRoomId && deleteFormRefs[deleteTargetRoomId]) {
+			deleteFormRefs[deleteTargetRoomId].requestSubmit();
+		}
+		deleteTargetRoomId = null;
+	}}
+	onCancel={() => { deleteTargetRoomId = null; }}
+/>

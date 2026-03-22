@@ -75,10 +75,16 @@ export async function runMigrations(db: DbClient): Promise<void> {
 		);
 		if (applied.rows.length > 0) continue;
 
-		// Execute entire migration in a transaction
+		// Execute each statement individually in a transaction
 		await db.query('BEGIN');
 		try {
-			await db.query(migration.sql);
+			const statements = migration.sql
+				.split(';')
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0);
+			for (const statement of statements) {
+				await db.query(statement);
+			}
 			await db.query(`INSERT INTO _migrations (name) VALUES ($1)`, [migration.name]);
 			await db.query('COMMIT');
 		} catch (e) {
