@@ -52,6 +52,12 @@ const migrations: { name: string; statements: string[] }[] = [
 )`,
 			`CREATE INDEX IF NOT EXISTS idx_messages_room_id_created ON messages(room_id, created_at)`
 		]
+	},
+	{
+		name: '002_extend_invite_code.sql',
+		statements: [
+			`ALTER TABLE rooms ALTER COLUMN invite_code TYPE VARCHAR(12)`
+		]
 	}
 ];
 
