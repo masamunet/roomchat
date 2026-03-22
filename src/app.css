@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+/* Clickable elements should show pointer cursor */
+@layer base {
+	button, [role="button"] {
+		cursor: pointer;
+	}
+}
+
 /* Mobile-friendly defaults */
 html {
 	-webkit-text-size-adjust: 100%;
