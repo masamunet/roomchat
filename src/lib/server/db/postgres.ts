@@ -5,12 +5,13 @@ let pool: pg.Pool | null = null;
 
 export async function createPostgresClient(connectionString: string): Promise<DbClient> {
 	if (!pool) {
+		const isRemoteDb = !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1');
 		pool = new pg.Pool({
 			connectionString,
 			max: 10,
 			idleTimeoutMillis: 30_000,
 			connectionTimeoutMillis: 5_000,
-			ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+			ssl: isRemoteDb ? { rejectUnauthorized: false } : false
 		});
 
 		pool.on('error', (err) => {
