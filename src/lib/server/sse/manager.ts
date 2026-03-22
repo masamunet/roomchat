@@ -74,6 +74,23 @@ class SSEManager {
 		}
 	}
 
+	broadcastNicknameChange(roomId: string, participantId: string, newNickname: string): void {
+		const infos = this.rooms.get(roomId);
+		if (!infos) return;
+
+		const payload = { participantId, newNickname };
+		const data = `event: nickname_changed\ndata: ${JSON.stringify(payload)}\n\n`;
+		const encoded = encoder.encode(data);
+
+		for (const info of infos) {
+			try {
+				info.controller.enqueue(encoded);
+			} catch {
+				infos.delete(info);
+			}
+		}
+	}
+
 	closeRoom(roomId: string): void {
 		const infos = this.rooms.get(roomId);
 		if (!infos) return;
