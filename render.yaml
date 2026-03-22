@@ -20,6 +20,10 @@ services:
         sync: false
       - key: NODE_ENV
         value: production
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: DB_SSL_MODE
+        value: no-verify
 
 databases:
   - name: roomchat-db
