@@ -50,9 +50,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	// Read participant cookie
-	event.locals.participantId = event.cookies.get('participant_id') ?? null;
-
 	const response = await resolve(event);
+
+	// Security headers
+	response.headers.set('X-Frame-Options', 'DENY');
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
 	return response;
 };

@@ -27,6 +27,11 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		error(404, 'ルームが見つかりません');
 	}
 
+	// Verify ownership
+	if (room.creatorId !== locals.user.id) {
+		error(403, 'このルームの管理権限がありません');
+	}
+
 	const participants = await getParticipantsByRoom(room.id);
 
 	let origin = url.origin;

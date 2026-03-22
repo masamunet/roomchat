@@ -1,15 +1,24 @@
 import { json, error } from '@sveltejs/kit';
 import { createMessage, getMessagesByRoom } from '$lib/server/repositories/message.js';
 import { getParticipantById } from '$lib/server/repositories/participant.js';
+import { getRoomById } from '$lib/server/repositories/room.js';
 import { sseManager } from '$lib/server/sse/manager.js';
+import { parseRoomParticipants } from '$lib/server/cookies.js';
+import { messageRateLimiter, MESSAGE_RATE_LIMIT } from '$lib/server/rate-limit.js';
 import type { RequestHandler } from './$types';
 
 function getParticipantIdFromCookies(cookies: { get: (name: string) => string | undefined }, roomId: string): string | null {
-	const roomParticipants = JSON.parse(cookies.get('room_participants') ?? '{}');
+	const roomParticipants = parseRoomParticipants(cookies.get('room_participants'));
 	return roomParticipants[roomId] ?? null;
 }
 
 export const GET: RequestHandler = async ({ params, url, cookies }) => {
+	// Verify room is active
+	const room = await getRoomById(params.roomId);
+	if (!room || !room.isActive) {
+		error(404, 'ルームが見つかりません');
+	}
+
 	// Verify participant
 	const participantId = getParticipantIdFromCookies(cookies, params.roomId);
 	if (!participantId) {
@@ -28,6 +37,12 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 };
 
 export const POST: RequestHandler = async ({ params, request, cookies }) => {
+	// Verify room is active
+	const room = await getRoomById(params.roomId);
+	if (!room || !room.isActive) {
+		error(404, 'ルームが見つかりません');
+	}
+
 	const participantId = getParticipantIdFromCookies(cookies, params.roomId);
 
 	if (!participantId) {
@@ -37,6 +52,11 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	const participant = await getParticipantById(participantId);
 	if (!participant || participant.roomId !== params.roomId) {
 		error(403, 'このルームに参加していません');
+	}
+
+	// Rate limiting
+	if (!messageRateLimiter.check(participantId, MESSAGE_RATE_LIMIT.maxRequests, MESSAGE_RATE_LIMIT.windowMs)) {
+		error(429, 'メッセージの送信が速すぎます。少し待ってから再度お試しください');
 	}
 
 	const body = await request.json();

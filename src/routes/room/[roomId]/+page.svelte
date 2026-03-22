@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import ChatInput from '$lib/components/ChatInput.svelte';
+	import QrOverlay from '$lib/components/QrOverlay.svelte';
 	import SlackView from '$lib/components/chat/SlackView.svelte';
 	import LineView from '$lib/components/chat/LineView.svelte';
 	import NiconicoView from '$lib/components/chat/NiconicoView.svelte';
@@ -11,6 +12,7 @@
 	let sseMessages = $state<Message[]>([]);
 	let allMessages = $derived<Message[]>([...data.messages, ...sseMessages]);
 	let viewMode = $state<ChatViewMode>('slack');
+	let showQrOverlay = $state(false);
 	let eventSource: EventSource | null = null;
 
 	onMount(() => {
@@ -70,7 +72,22 @@
 			<h1 class="text-base font-semibold text-gray-900 truncate">{data.room.name}</h1>
 			<p class="text-xs text-gray-500">{data.participant.nickname}として参加中</p>
 		</div>
-		<ViewSwitcher current={viewMode} onChange={handleViewChange} />
+		<div class="flex items-center gap-2">
+			{#if data.isCreator}
+				<button
+					type="button"
+					onclick={() => showQrOverlay = true}
+					class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+					aria-label="招待QRコードを表示"
+					title="招待QRコード"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm14 3h.01M17 14h3v3h-3v-3zm0 4h3v3h-3v-3zm-4 0h3v3h-3v-3z"/>
+					</svg>
+				</button>
+			{/if}
+			<ViewSwitcher current={viewMode} onChange={handleViewChange} />
+		</div>
 	</div>
 
 	<!-- Chat View -->
@@ -85,3 +102,11 @@
 	<!-- Input -->
 	<ChatInput onSend={sendMessage} />
 </div>
+
+{#if showQrOverlay && data.joinUrl}
+	<QrOverlay
+		joinUrl={data.joinUrl}
+		inviteCode={data.room.inviteCode}
+		onClose={() => showQrOverlay = false}
+	/>
+{/if}

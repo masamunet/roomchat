@@ -9,7 +9,6 @@ declare global {
 				email: string;
 				avatarUrl: string | null;
 			} | null;
-			participantId: string | null;
 		}
 		// interface PageData {}
 		// interface PageState {}

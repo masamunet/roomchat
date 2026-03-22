@@ -1,13 +1,21 @@
 import { error } from '@sveltejs/kit';
 import { sseManager } from '$lib/server/sse/manager.js';
 import { getParticipantById } from '$lib/server/repositories/participant.js';
+import { getRoomById } from '$lib/server/repositories/room.js';
+import { parseRoomParticipants } from '$lib/server/cookies.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params, cookies }) => {
 	const roomId = params.roomId;
 
+	// Verify room is active
+	const room = await getRoomById(roomId);
+	if (!room || !room.isActive) {
+		error(404, 'ルームが見つかりません');
+	}
+
 	// Verify participant
-	const roomParticipants = JSON.parse(cookies.get('room_participants') ?? '{}');
+	const roomParticipants = parseRoomParticipants(cookies.get('room_participants'));
 	const participantId = roomParticipants[roomId];
 	if (!participantId) {
 		error(401, '入室が必要です');

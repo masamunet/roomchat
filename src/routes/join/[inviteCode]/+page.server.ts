@@ -2,6 +2,7 @@ import { redirect, fail, error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 import { getRoomByInviteCode } from '$lib/server/repositories/room.js';
 import { createParticipant, isNicknameTaken } from '$lib/server/repositories/participant.js';
+import { parseRoomParticipants, pruneRoomParticipants } from '$lib/server/cookies.js';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -37,18 +38,10 @@ export const actions: Actions = {
 
 		const participant = await createParticipant(room.id, nickname);
 
-		cookies.set('participant_id', participant.id, {
-			path: '/',
-			httpOnly: true,
-			secure: !dev,
-			maxAge: 24 * 60 * 60,
-			sameSite: 'lax'
-		});
-
 		// Store room-participant mapping
-		const roomParticipants = JSON.parse(cookies.get('room_participants') ?? '{}');
+		const roomParticipants = parseRoomParticipants(cookies.get('room_participants'));
 		roomParticipants[room.id] = participant.id;
-		cookies.set('room_participants', JSON.stringify(roomParticipants), {
+		cookies.set('room_participants', JSON.stringify(pruneRoomParticipants(roomParticipants)), {
 			path: '/',
 			httpOnly: true,
 			secure: !dev,

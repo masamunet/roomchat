@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import type { DbClient } from './index.js';
@@ -6,15 +6,38 @@ import type { DbClient } from './index.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export async function runMigrations(db: DbClient): Promise<void> {
-	const migrationPath = join(__dirname, 'migrations', '001_initial.sql');
-	const sql = readFileSync(migrationPath, 'utf-8');
+	// Create migrations tracking table
+	await db.query(`
+		CREATE TABLE IF NOT EXISTS _migrations (
+			name VARCHAR(255) PRIMARY KEY,
+			applied_at TIMESTAMPTZ DEFAULT NOW()
+		)
+	`);
 
-	const statements = sql
-		.split(';')
-		.map((s) => s.trim())
-		.filter((s) => s.length > 0);
+	const migrationsDir = join(__dirname, 'migrations');
+	const files = readdirSync(migrationsDir)
+		.filter((f) => f.endsWith('.sql'))
+		.sort();
 
-	for (const statement of statements) {
-		await db.query(statement);
+	for (const file of files) {
+		// Check if already applied
+		const applied = await db.query<{ name: string }>(
+			`SELECT name FROM _migrations WHERE name = $1`,
+			[file]
+		);
+		if (applied.rows.length > 0) continue;
+
+		const sql = readFileSync(join(migrationsDir, file), 'utf-8');
+		const statements = sql
+			.split(';')
+			.map((s) => s.trim())
+			.filter((s) => s.length > 0);
+
+		for (const statement of statements) {
+			await db.query(statement);
+		}
+
+		// Record migration
+		await db.query(`INSERT INTO _migrations (name) VALUES ($1)`, [file]);
 	}
 }

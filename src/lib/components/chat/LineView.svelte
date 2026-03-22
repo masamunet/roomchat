@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { format } from 'date-fns';
 	import type { Message } from '$lib/types/index.js';
 
@@ -15,7 +16,9 @@
 			const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
 			const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
 			if (isNearBottom) {
-				scrollContainer.scrollTop = scrollContainer.scrollHeight;
+				tick().then(() => {
+					scrollContainer.scrollTop = scrollContainer.scrollHeight;
+				});
 			}
 		}
 	});

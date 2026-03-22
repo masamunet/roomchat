@@ -47,37 +47,7 @@ export async function findOrCreateUser(googleUser: {
 }): Promise<User> {
 	const db = await getDb();
 
-	// Try to find existing user
-	const existing = await db.query<{
-		id: string;
-		google_id: string;
-		email: string;
-		name: string | null;
-		avatar_url: string | null;
-		created_at: Date;
-	}>(
-		`SELECT * FROM users WHERE google_id = $1`,
-		[googleUser.sub]
-	);
-
-	if (existing.rows.length > 0) {
-		const row = existing.rows[0];
-		// Update profile info
-		await db.query(
-			`UPDATE users SET name = $1, avatar_url = $2, email = $3 WHERE id = $4`,
-			[googleUser.name ?? null, googleUser.picture ?? null, googleUser.email, row.id]
-		);
-		return {
-			id: row.id,
-			googleId: row.google_id,
-			email: googleUser.email,
-			name: googleUser.name ?? null,
-			avatarUrl: googleUser.picture ?? null,
-			createdAt: new Date(row.created_at)
-		};
-	}
-
-	// Create new user
+	// Upsert: INSERT ON CONFLICT to avoid TOCTOU race
 	const result = await db.query<{
 		id: string;
 		google_id: string;
@@ -87,7 +57,10 @@ export async function findOrCreateUser(googleUser: {
 		created_at: Date;
 	}>(
 		`INSERT INTO users (google_id, email, name, avatar_url)
-		 VALUES ($1, $2, $3, $4) RETURNING *`,
+		 VALUES ($1, $2, $3, $4)
+		 ON CONFLICT (google_id) DO UPDATE
+		 SET email = EXCLUDED.email, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url
+		 RETURNING *`,
 		[googleUser.sub, googleUser.email, googleUser.name ?? null, googleUser.picture ?? null]
 	);
 
