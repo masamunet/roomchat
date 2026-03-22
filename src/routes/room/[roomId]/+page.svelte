@@ -120,6 +120,11 @@
 		editingNickname = true;
 	}
 
+	function autofocus(node: HTMLInputElement) {
+		node.focus();
+		node.select();
+	}
+
 	function cancelEditNickname() {
 		editingNickname = false;
 		nicknameError = '';
@@ -205,6 +210,7 @@
 					<input
 						type="text"
 						bind:value={nicknameInput}
+						use:autofocus
 						maxlength={50}
 						class="text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') cancelEditNickname(); }}
