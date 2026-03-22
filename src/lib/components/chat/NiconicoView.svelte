@@ -12,6 +12,7 @@
 	let processedCount = $state(0);
 	let mounted = $state(false);
 	let activeElements: HTMLDivElement[] = [];
+	let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
 
 	onMount(() => {
 		// Skip initial messages — only animate new ones arriving via SSE
@@ -20,6 +21,10 @@
 	});
 
 	onDestroy(() => {
+		for (const id of activeTimeouts) {
+			clearTimeout(id);
+		}
+		activeTimeouts = [];
 		for (const el of activeElements) {
 			el.remove();
 		}
@@ -65,11 +70,13 @@
 		const cleanup = () => {
 			el.remove();
 			activeElements = activeElements.filter((e) => e !== el);
+			activeTimeouts = activeTimeouts.filter((t) => t !== timeoutId);
 		};
 
 		// Remove after animation (with timeout fallback for background tabs)
 		el.addEventListener('animationend', cleanup, { once: true });
-		setTimeout(cleanup, (duration + 1) * 1000);
+		const timeoutId = setTimeout(cleanup, (duration + 1) * 1000);
+		activeTimeouts.push(timeoutId);
 	}
 </script>
 

@@ -27,6 +27,17 @@ async function cleanExpiredSessions() {
 export const handle: Handle = async ({ event, resolve }) => {
 	await initializeDb();
 
+	// CSRF protection for non-GET API requests
+	if (event.url.pathname.startsWith('/api/') && event.request.method !== 'GET') {
+		const origin = event.request.headers.get('origin');
+		if (!origin || origin !== event.url.origin) {
+			return new Response(JSON.stringify({ message: '不正なリクエストです' }), {
+				status: 403,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+	}
+
 	// Read session cookie
 	const sessionId = event.cookies.get('session_id');
 	event.locals.user = null;
@@ -61,7 +72,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Periodic session cleanup (non-blocking)
-	cleanExpiredSessions().catch(() => {});
+	cleanExpiredSessions().catch((e) => console.error('Session cleanup failed:', e));
 
 	const response = await resolve(event);
 

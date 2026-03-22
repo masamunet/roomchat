@@ -27,7 +27,10 @@
 		// Connect SSE
 		eventSource = new EventSource(`/api/sse/${data.room.id}`);
 		eventSource.onmessage = (event) => {
-			const msg = JSON.parse(event.data);
+			let msg;
+			try {
+				msg = JSON.parse(event.data);
+			} catch { return; }
 			if (msg.type === 'connected') return;
 			// Deduplicate (message might already exist from initial load)
 			if (!data.messages.some((m: Message) => m.id === msg.id) &&
@@ -42,14 +45,13 @@
 					const res = await fetch(`/api/messages/${data.room.id}?limit=50`);
 					if (!res.ok) return;
 					const msgs: Message[] = await res.json();
-					let updated = sseMessages;
-					for (const msg of msgs) {
-						if (!data.messages.some((m: Message) => m.id === msg.id) &&
-							!updated.some((m) => m.id === msg.id)) {
-							updated = [...updated, msg];
-						}
+					const newMsgs = msgs.filter((msg) =>
+						!data.messages.some((m: Message) => m.id === msg.id) &&
+						!sseMessages.some((m) => m.id === msg.id)
+					);
+					if (newMsgs.length > 0) {
+						sseMessages = [...sseMessages, ...newMsgs].slice(-MAX_SSE_MESSAGES);
 					}
-					sseMessages = updated.slice(-MAX_SSE_MESSAGES);
 				} catch { /* ignore */ }
 			};
 			// Delay slightly to let reconnection settle

@@ -1,8 +1,11 @@
 import { createHmac, timingSafeEqual } from 'crypto';
+import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
 function getSecret(): string {
-	return env.COOKIE_SECRET || 'roomchat-dev-secret-change-in-production';
+	if (env.COOKIE_SECRET) return env.COOKIE_SECRET;
+	if (dev) return 'roomchat-dev-secret-change-in-production';
+	throw new Error('COOKIE_SECRET must be set in production');
 }
 
 function sign(data: string): string {

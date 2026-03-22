@@ -3,11 +3,16 @@ import { dev } from '$app/environment';
 import { getRoomById } from '$lib/server/repositories/room.js';
 import { getParticipantsByRoom } from '$lib/server/repositories/participant.js';
 import { getLocalIpAddress } from '$lib/server/network.js';
+import { isValidUUID } from '$lib/server/validation.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals, url }) => {
 	if (!locals.user) {
 		redirect(302, '/');
+	}
+
+	if (!isValidUUID(params.roomId)) {
+		error(400, '無効なルームIDです');
 	}
 
 	const room = await getRoomById(params.roomId);

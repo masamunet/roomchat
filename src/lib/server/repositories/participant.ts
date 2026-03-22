@@ -49,6 +49,15 @@ export async function getParticipantById(participantId: string): Promise<Partici
 	return result.rows.length > 0 ? toParticipant(result.rows[0]) : null;
 }
 
+export async function countParticipantsByRoom(roomId: string): Promise<number> {
+	const db = await getDb();
+	const result = await db.query<{ count: string }>(
+		`SELECT count(*)::text as count FROM participants WHERE room_id = $1`,
+		[roomId]
+	);
+	return parseInt(result.rows[0].count, 10);
+}
+
 export async function getParticipantsByRoom(roomId: string): Promise<Participant[]> {
 	const db = await getDb();
 	const result = await db.query<ParticipantRow>(

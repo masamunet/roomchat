@@ -1,8 +1,14 @@
 import { redirect, error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
+import { timingSafeEqual } from 'crypto';
 import * as arctic from 'arctic';
 import { getGoogleOAuth, findOrCreateUser, createSession } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
+
+function safeEqual(a: string, b: string): boolean {
+	if (a.length !== b.length) return false;
+	return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
 	const code = url.searchParams.get('code');
@@ -10,7 +16,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	const storedState = cookies.get('google_oauth_state');
 	const codeVerifier = cookies.get('google_code_verifier');
 
-	if (!code || !state || !storedState || state !== storedState || !codeVerifier) {
+	if (!code || !state || !storedState || !safeEqual(state, storedState) || !codeVerifier) {
 		error(400, '無効なリクエストです');
 	}
 

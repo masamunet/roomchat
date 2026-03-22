@@ -1,7 +1,7 @@
 import { redirect, fail, error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 import { getRoomByInviteCode } from '$lib/server/repositories/room.js';
-import { createParticipant, isNicknameTaken } from '$lib/server/repositories/participant.js';
+import { createParticipant, countParticipantsByRoom } from '$lib/server/repositories/participant.js';
 import { parseRoomParticipants, encodeRoomParticipants } from '$lib/server/cookies.js';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -31,9 +31,9 @@ export const actions: Actions = {
 			return fail(400, { error: 'ニックネームは50文字以内で入力してください' });
 		}
 
-		const taken = await isNicknameTaken(room.id, nickname);
-		if (taken) {
-			return fail(400, { error: 'このニックネームは既に使用されています' });
+		const participantCount = await countParticipantsByRoom(room.id);
+		if (participantCount >= 100) {
+			return fail(400, { error: 'このルームは参加者数の上限に達しています' });
 		}
 
 		let participant;

@@ -5,12 +5,20 @@ import { getParticipantById } from '$lib/server/repositories/participant.js';
 import { getMessagesByRoom } from '$lib/server/repositories/message.js';
 import { parseRoomParticipants } from '$lib/server/cookies.js';
 import { getLocalIpAddress } from '$lib/server/network.js';
+import { isValidUUID } from '$lib/server/validation.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, cookies, locals, url }) => {
+	if (!isValidUUID(params.roomId)) {
+		error(400, '無効なルームIDです');
+	}
+
 	const room = await getRoomById(params.roomId);
-	if (!room || !room.isActive) {
-		error(404, 'ルームが見つかりません');
+	if (!room) {
+		error(404, 'このルームは削除されました');
+	}
+	if (!room.isActive) {
+		error(404, 'このルームは終了しました');
 	}
 
 	// Check participant cookie

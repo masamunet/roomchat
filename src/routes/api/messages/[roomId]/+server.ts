@@ -80,7 +80,9 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		error(400, '不正なリクエスト形式です');
 	}
 
-	const content = (typeof body.content === 'string' ? body.content : '').trim();
+	const rawContent = (typeof body.content === 'string' ? body.content : '').trim();
+	// Strip Unicode control characters (C0/C1 except \n\t, and bidi overrides)
+	const content = rawContent.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '');
 
 	if (!content || content.length === 0) {
 		error(400, 'メッセージを入力してください');

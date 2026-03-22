@@ -83,7 +83,7 @@ export async function deleteExpiredRooms(): Promise<number> {
 	const db = await getDb();
 	const result = await db.query<{ count: string }>(
 		`WITH deleted AS (
-			DELETE FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours' AND is_active = TRUE
+			DELETE FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours'
 			RETURNING id
 		) SELECT count(*)::text as count FROM deleted`
 	);

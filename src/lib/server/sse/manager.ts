@@ -74,6 +74,17 @@ class SSEManager {
 		}
 	}
 
+	closeRoom(roomId: string): void {
+		const infos = this.rooms.get(roomId);
+		if (!infos) return;
+		for (const info of infos) {
+			try {
+				info.controller.close();
+			} catch { /* already closed */ }
+		}
+		this.rooms.delete(roomId);
+	}
+
 	getConnectionCount(roomId: string): number {
 		return this.rooms.get(roomId)?.size ?? 0;
 	}

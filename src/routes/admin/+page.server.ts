@@ -1,5 +1,6 @@
 import { redirect, fail } from '@sveltejs/kit';
 import { listRoomsByCreator, createRoom, deleteRoom, deleteExpiredRooms, countActiveRoomsByCreator, getRoomById } from '$lib/server/repositories/room.js';
+import { sseManager } from '$lib/server/sse/manager.js';
 import { isValidUUID } from '$lib/server/validation.js';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -65,6 +66,7 @@ export const actions: Actions = {
 		}
 
 		await deleteRoom(roomId);
+		sseManager.closeRoom(roomId);
 		return { success: true };
 	}
 };
