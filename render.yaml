@@ -5,7 +5,7 @@ services:
     plan: free
     branch: main
     healthCheckPath: /
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: node build
     envVars:
       - key: DATABASE_URL
