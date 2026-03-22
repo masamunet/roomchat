@@ -9,7 +9,8 @@ export async function createPostgresClient(connectionString: string): Promise<Db
 			connectionString,
 			max: 10,
 			idleTimeoutMillis: 30_000,
-			connectionTimeoutMillis: 5_000
+			connectionTimeoutMillis: 5_000,
+			ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 		});
 
 		// Graceful shutdown (registered once with pool creation)

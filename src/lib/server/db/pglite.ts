@@ -15,8 +15,13 @@ export async function createPGLiteClient(): Promise<DbClient> {
 
 	return {
 		async query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: T[] }> {
-			const result = await instance!.query<T>(sql, params);
-			return { rows: result.rows };
+			if (params && params.length > 0) {
+				const result = await instance!.query<T>(sql, params);
+				return { rows: result.rows };
+			}
+			const results = await instance!.exec(sql);
+			const last = results[results.length - 1];
+			return { rows: (last?.rows ?? []) as T[] };
 		}
 	};
 }
