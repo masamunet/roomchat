@@ -50,13 +50,13 @@
 							onclick={() => menuOpen = false}
 							onkeydown={() => {}}
 						></div>
-						<div class="absolute right-0 top-10 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-48">
+						<div class="absolute right-0 top-10 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-48" role="menu">
 							<div class="px-4 py-2 border-b border-gray-100">
 								<p class="text-sm font-medium text-gray-900">{user.name ?? 'ユーザー'}</p>
 								<p class="text-xs text-gray-500">{user.email}</p>
 							</div>
 							<form method="POST" action="/auth/logout">
-								<button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
+								<button type="submit" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
 									ログアウト
 								</button>
 							</form>

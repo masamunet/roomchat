@@ -15,12 +15,11 @@
 	];
 </script>
 
-<div class="flex bg-gray-100 rounded-lg p-0.5" role="tablist" aria-label="チャット表示モード">
+<div class="flex bg-gray-100 rounded-lg p-0.5" role="group" aria-label="チャット表示モード">
 	{#each modes as mode}
 		<button
 			type="button"
-			role="tab"
-			aria-selected={current === mode.value}
+			aria-pressed={current === mode.value}
 			onclick={() => onChange(mode.value)}
 			class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
 			class:bg-white={current === mode.value}
