@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount, onDestroy, untrack } from 'svelte';
 	import type { Message } from '$lib/types/index.js';
 
 	type Props = {
@@ -11,11 +11,19 @@
 	let container: HTMLDivElement;
 	let processedCount = $state(0);
 	let mounted = $state(false);
+	let activeElements: HTMLDivElement[] = [];
 
 	onMount(() => {
 		// Skip initial messages — only animate new ones arriving via SSE
 		processedCount = messages.length;
 		mounted = true;
+	});
+
+	onDestroy(() => {
+		for (const el of activeElements) {
+			el.remove();
+		}
+		activeElements = [];
 	});
 
 	// Track which messages have already been animated
@@ -51,11 +59,13 @@
 			el.style.color = '#22c55e';
 		}
 
+		activeElements.push(el);
 		container.appendChild(el);
 
 		// Remove after animation
 		el.addEventListener('animationend', () => {
 			el.remove();
+			activeElements = activeElements.filter((e) => e !== el);
 		});
 	}
 </script>

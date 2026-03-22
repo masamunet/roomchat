@@ -1,17 +1,26 @@
 /**
- * Simple in-memory rate limiter.
+ * Simple in-memory rate limiter with periodic cleanup.
  * Tracks timestamps of recent actions per key, sliding window.
  */
 class RateLimiter {
 	private windows = new Map<string, number[]>();
+	private cleanupInterval: ReturnType<typeof setInterval>;
 
-	/**
-	 * Check if an action is allowed.
-	 * @param key Unique key (e.g. participantId)
-	 * @param maxRequests Max requests in the window
-	 * @param windowMs Window duration in milliseconds
-	 * @returns true if allowed, false if rate-limited
-	 */
+	constructor() {
+		// Clean up stale keys every 60 seconds
+		this.cleanupInterval = setInterval(() => {
+			const now = Date.now();
+			for (const [key, timestamps] of this.windows) {
+				const valid = timestamps.filter((t) => now - t < 60_000);
+				if (valid.length === 0) {
+					this.windows.delete(key);
+				} else {
+					this.windows.set(key, valid);
+				}
+			}
+		}, 60_000);
+	}
+
 	check(key: string, maxRequests: number, windowMs: number): boolean {
 		const now = Date.now();
 		const timestamps = this.windows.get(key) ?? [];

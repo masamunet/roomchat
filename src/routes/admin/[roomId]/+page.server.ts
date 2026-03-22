@@ -1,21 +1,9 @@
 import { redirect, error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
-import { networkInterfaces } from 'os';
 import { getRoomById } from '$lib/server/repositories/room.js';
 import { getParticipantsByRoom } from '$lib/server/repositories/participant.js';
+import { getLocalIpAddress } from '$lib/server/network.js';
 import type { PageServerLoad } from './$types';
-
-function getLocalIpAddress(): string | null {
-	const nets = networkInterfaces();
-	for (const name of Object.keys(nets)) {
-		for (const net of nets[name] ?? []) {
-			if (net.family === 'IPv4' && !net.internal) {
-				return net.address;
-			}
-		}
-	}
-	return null;
-}
 
 export const load: PageServerLoad = async ({ params, locals, url }) => {
 	if (!locals.user) {

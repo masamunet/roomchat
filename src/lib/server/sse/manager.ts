@@ -2,57 +2,68 @@ import type { Message } from '$lib/types/index.js';
 
 type SSEController = ReadableStreamDefaultController<Uint8Array>;
 
+interface ControllerInfo {
+	controller: SSEController;
+	participantId: string;
+}
+
 const encoder = new TextEncoder();
 
 class SSEManager {
-	private rooms = new Map<string, Set<SSEController>>();
-	private keepaliveInterval: ReturnType<typeof setInterval> | null = null;
+	private rooms = new Map<string, Set<ControllerInfo>>();
+	private keepaliveInterval: ReturnType<typeof setInterval>;
 
 	constructor() {
-		// Send keepalive comment every 30 seconds to prevent proxy/LB timeouts
 		this.keepaliveInterval = setInterval(() => {
 			const keepalive = encoder.encode(': keepalive\n\n');
-			for (const [, controllers] of this.rooms) {
-				for (const controller of controllers) {
+			for (const [, infos] of this.rooms) {
+				for (const info of infos) {
 					try {
-						controller.enqueue(keepalive);
+						info.controller.enqueue(keepalive);
 					} catch {
-						controllers.delete(controller);
+						infos.delete(info);
 					}
 				}
 			}
 		}, 30_000);
 	}
 
-	subscribe(roomId: string, controller: SSEController): void {
+	subscribe(roomId: string, controller: SSEController, participantId: string): void {
 		if (!this.rooms.has(roomId)) {
 			this.rooms.set(roomId, new Set());
 		}
-		this.rooms.get(roomId)!.add(controller);
+		this.rooms.get(roomId)!.add({ controller, participantId });
 	}
 
 	unsubscribe(roomId: string, controller: SSEController): void {
-		const controllers = this.rooms.get(roomId);
-		if (controllers) {
-			controllers.delete(controller);
-			if (controllers.size === 0) {
+		const infos = this.rooms.get(roomId);
+		if (infos) {
+			for (const info of infos) {
+				if (info.controller === controller) {
+					infos.delete(info);
+					break;
+				}
+			}
+			if (infos.size === 0) {
 				this.rooms.delete(roomId);
 			}
 		}
 	}
 
-	broadcast(roomId: string, message: Message): void {
-		const controllers = this.rooms.get(roomId);
-		if (!controllers) return;
+	broadcast(roomId: string, message: Message, senderParticipantId?: string): void {
+		const infos = this.rooms.get(roomId);
+		if (!infos) return;
 
 		const data = `data: ${JSON.stringify(message)}\n\n`;
 		const encoded = encoder.encode(data);
 
-		for (const controller of controllers) {
+		for (const info of infos) {
+			// Skip sending back to the sender
+			if (senderParticipantId && info.participantId === senderParticipantId) continue;
 			try {
-				controller.enqueue(encoded);
+				info.controller.enqueue(encoded);
 			} catch {
-				controllers.delete(controller);
+				infos.delete(info);
 			}
 		}
 	}
@@ -60,6 +71,20 @@ class SSEManager {
 	getConnectionCount(roomId: string): number {
 		return this.rooms.get(roomId)?.size ?? 0;
 	}
+
+	destroy(): void {
+		clearInterval(this.keepaliveInterval);
+		this.rooms.clear();
+	}
+}
+
+// Module-level singleton with HMR guard
+const globalKey = '__roomchat_sse_manager__';
+const g = globalThis as Record<string, unknown>;
+
+if (g[globalKey]) {
+	(g[globalKey] as SSEManager).destroy();
 }
 
 export const sseManager = new SSEManager();
+g[globalKey] = sseManager;

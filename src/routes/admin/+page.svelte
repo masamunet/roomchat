@@ -1,18 +1,8 @@
 <script lang="ts">
-	import { addHours, differenceInMinutes } from 'date-fns';
 	import { enhance } from '$app/forms';
+	import { getRemainingTime } from '$lib/utils/remaining-time.js';
 
 	let { data, form } = $props();
-
-	function getRemainingTime(createdAt: Date): string {
-		const expiresAt = addHours(new Date(createdAt), 6);
-		const minutesLeft = differenceInMinutes(expiresAt, new Date());
-		if (minutesLeft <= 0) return '期限切れ';
-		const hours = Math.floor(minutesLeft / 60);
-		const mins = minutesLeft % 60;
-		if (hours > 0) return `残り${hours}時間${mins}分`;
-		return `残り${mins}分`;
-	}
 </script>
 
 <div class="max-w-2xl mx-auto px-4 py-6">

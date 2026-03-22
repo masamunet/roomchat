@@ -35,7 +35,7 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
 			const connectMsg = `data: ${JSON.stringify({ type: 'connected' })}\n\n`;
 			controller.enqueue(new TextEncoder().encode(connectMsg));
 
-			sseManager.subscribe(roomId, controller);
+			sseManager.subscribe(roomId, controller, participantId);
 		},
 		cancel() {
 			sseManager.unsubscribe(roomId, sseController);

@@ -28,16 +28,16 @@ export async function runMigrations(db: DbClient): Promise<void> {
 		if (applied.rows.length > 0) continue;
 
 		const sql = readFileSync(join(migrationsDir, file), 'utf-8');
-		const statements = sql
-			.split(';')
-			.map((s) => s.trim())
-			.filter((s) => s.length > 0);
 
-		for (const statement of statements) {
-			await db.query(statement);
+		// Execute entire migration in a transaction
+		await db.query('BEGIN');
+		try {
+			await db.query(sql);
+			await db.query(`INSERT INTO _migrations (name) VALUES ($1)`, [file]);
+			await db.query('COMMIT');
+		} catch (e) {
+			await db.query('ROLLBACK');
+			throw new Error(`Migration ${file} failed: ${e instanceof Error ? e.message : e}`);
 		}
-
-		// Record migration
-		await db.query(`INSERT INTO _migrations (name) VALUES ($1)`, [file]);
 	}
 }

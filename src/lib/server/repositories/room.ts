@@ -24,16 +24,26 @@ function toRoom(row: RoomRow): Room {
 
 export async function createRoom(name: string, creatorId: string): Promise<Room> {
 	const db = await getDb();
-	const inviteCode = generateInviteCode();
 
-	const result = await db.query<RoomRow>(
-		`INSERT INTO rooms (name, invite_code, creator_id)
-		 VALUES ($1, $2, $3)
-		 RETURNING *`,
-		[name, inviteCode, creatorId]
-	);
+	// Retry on invite code collision (unique constraint)
+	for (let attempt = 0; attempt < 3; attempt++) {
+		const inviteCode = generateInviteCode();
+		try {
+			const result = await db.query<RoomRow>(
+				`INSERT INTO rooms (name, invite_code, creator_id)
+				 VALUES ($1, $2, $3)
+				 RETURNING *`,
+				[name, inviteCode, creatorId]
+			);
+			return toRoom(result.rows[0]);
+		} catch (e: unknown) {
+			const isUniqueViolation =
+				e instanceof Error && ('code' in e) && (e as { code: string }).code === '23505';
+			if (!isUniqueViolation || attempt === 2) throw e;
+		}
+	}
 
-	return toRoom(result.rows[0]);
+	throw new Error('招待コードの生成に失敗しました');
 }
 
 export async function listRoomsByCreator(creatorId: string): Promise<Room[]> {

@@ -33,6 +33,12 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		}
 
 		const googleUser = await response.json();
+
+		if (!googleUser.sub || typeof googleUser.sub !== 'string' ||
+			!googleUser.email || typeof googleUser.email !== 'string') {
+			error(500, 'Googleプロフィールが不正です');
+		}
+
 		const user = await findOrCreateUser({
 			sub: googleUser.sub,
 			email: googleUser.email,

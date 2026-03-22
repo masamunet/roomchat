@@ -5,6 +5,7 @@ import { getRoomById } from '$lib/server/repositories/room.js';
 import { sseManager } from '$lib/server/sse/manager.js';
 import { parseRoomParticipants } from '$lib/server/cookies.js';
 import { messageRateLimiter, MESSAGE_RATE_LIMIT } from '$lib/server/rate-limit.js';
+import { isValidUUID } from '$lib/server/validation.js';
 import type { RequestHandler } from './$types';
 
 function getParticipantIdFromCookies(cookies: { get: (name: string) => string | undefined }, roomId: string): string | null {
@@ -29,8 +30,13 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 		error(403, 'このルームに参加していません');
 	}
 
-	const limit = parseInt(url.searchParams.get('limit') ?? '100', 10);
+	const rawLimit = parseInt(url.searchParams.get('limit') ?? '100', 10);
+	const limit = Math.min(Math.max(1, isNaN(rawLimit) ? 100 : rawLimit), 200);
 	const before = url.searchParams.get('before') ?? undefined;
+
+	if (before && !isValidUUID(before)) {
+		error(400, '無効なパラメータです');
+	}
 
 	const messages = await getMessagesByRoom(params.roomId, limit, before);
 	return json(messages);
@@ -59,8 +65,14 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		error(429, 'メッセージの送信が速すぎます。少し待ってから再度お試しください');
 	}
 
-	const body = await request.json();
-	const content = body.content?.trim();
+	let body: Record<string, unknown>;
+	try {
+		body = await request.json();
+	} catch {
+		error(400, '不正なリクエスト形式です');
+	}
+
+	const content = (typeof body.content === 'string' ? body.content : '').trim();
 
 	if (!content || content.length === 0) {
 		error(400, 'メッセージを入力してください');
@@ -72,8 +84,8 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 
 	const message = await createMessage(params.roomId, participantId, content);
 
-	// Broadcast to all SSE subscribers
-	sseManager.broadcast(params.roomId, message);
+	// Broadcast to all SSE subscribers (skip sender)
+	sseManager.broadcast(params.roomId, message, participantId);
 
 	return json(message);
 };

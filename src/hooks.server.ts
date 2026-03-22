@@ -14,6 +14,16 @@ function initializeDb() {
 	return initPromise;
 }
 
+// Periodically clean expired sessions (at most once per 10 minutes)
+let lastSessionCleanup = 0;
+async function cleanExpiredSessions() {
+	const now = Date.now();
+	if (now - lastSessionCleanup < 600_000) return;
+	lastSessionCleanup = now;
+	const db = await getDb();
+	await db.query(`DELETE FROM sessions WHERE expires_at < NOW()`);
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	await initializeDb();
 
@@ -50,6 +60,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
+	// Periodic session cleanup (non-blocking)
+	cleanExpiredSessions().catch(() => {});
+
 	const response = await resolve(event);
 
 	// Security headers
@@ -57,6 +70,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+	response.headers.set(
+		'Content-Security-Policy',
+		"default-src 'self'; img-src 'self' https://*.googleusercontent.com data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'"
+	);
 
 	return response;
 };

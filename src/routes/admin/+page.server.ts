@@ -2,13 +2,19 @@ import { redirect, fail } from '@sveltejs/kit';
 import { listRoomsByCreator, createRoom, deleteRoom, deleteExpiredRooms, countActiveRoomsByCreator, getRoomById } from '$lib/server/repositories/room.js';
 import type { PageServerLoad, Actions } from './$types';
 
+let lastCleanup = 0;
+
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
 		redirect(302, '/');
 	}
 
-	// Auto-delete expired rooms
-	await deleteExpiredRooms();
+	// Auto-delete expired rooms (throttled: at most once per minute)
+	const now = Date.now();
+	if (now - lastCleanup > 60_000) {
+		lastCleanup = now;
+		await deleteExpiredRooms();
+	}
 
 	const rooms = await listRoomsByCreator(locals.user.id);
 	return { rooms };

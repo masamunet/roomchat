@@ -1,5 +1,28 @@
+import { createHmac } from 'crypto';
+import { env } from '$env/dynamic/private';
+
+function getSecret(): string {
+	return env.COOKIE_SECRET || 'roomchat-dev-secret-change-in-production';
+}
+
+function sign(data: string): string {
+	const hmac = createHmac('sha256', getSecret());
+	hmac.update(data);
+	return hmac.digest('hex');
+}
+
 /**
- * Safely parse the room_participants cookie.
+ * Encode and sign room_participants data for cookie storage.
+ */
+export function encodeRoomParticipants(map: Record<string, string>): string {
+	const pruned = pruneRoomParticipants(map);
+	const json = JSON.stringify(pruned);
+	const signature = sign(json);
+	return `${signature}.${json}`;
+}
+
+/**
+ * Safely parse and verify the room_participants cookie.
  * Returns a Record mapping roomId → participantId, or empty object on failure.
  */
 export function parseRoomParticipants(
@@ -7,7 +30,17 @@ export function parseRoomParticipants(
 ): Record<string, string> {
 	if (!raw) return {};
 	try {
-		const parsed = JSON.parse(raw);
+		const dotIndex = raw.indexOf('.');
+		if (dotIndex === -1) return {};
+
+		const sig = raw.slice(0, dotIndex);
+		const json = raw.slice(dotIndex + 1);
+
+		// Verify signature
+		const expected = sign(json);
+		if (sig !== expected) return {};
+
+		const parsed = JSON.parse(json);
 		if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
 			return parsed as Record<string, string>;
 		}
@@ -19,7 +52,6 @@ export function parseRoomParticipants(
 
 /**
  * Prune room_participants to keep only the most recent MAX_ENTRIES entries.
- * Since JS objects preserve insertion order, we keep the last N entries.
  */
 const MAX_ENTRIES = 20;
 
@@ -28,7 +60,6 @@ export function pruneRoomParticipants(
 ): Record<string, string> {
 	const entries = Object.entries(map);
 	if (entries.length <= MAX_ENTRIES) return map;
-	// Keep the last MAX_ENTRIES
 	const pruned = entries.slice(-MAX_ENTRIES);
 	return Object.fromEntries(pruned);
 }

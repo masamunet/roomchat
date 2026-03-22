@@ -13,6 +13,7 @@
 	let allMessages = $derived<Message[]>([...data.messages, ...sseMessages]);
 	let viewMode = $state<ChatViewMode>('slack');
 	let showQrOverlay = $state(false);
+	let sendError = $state('');
 	let eventSource: EventSource | null = null;
 
 	onMount(() => {
@@ -34,7 +35,22 @@
 			}
 		};
 		eventSource.onerror = () => {
-			// EventSource auto-reconnects
+			// EventSource auto-reconnects; fetch missed messages on reconnect
+			const fetchMissed = async () => {
+				try {
+					const res = await fetch(`/api/messages/${data.room.id}?limit=50`);
+					if (!res.ok) return;
+					const msgs: Message[] = await res.json();
+					for (const msg of msgs) {
+						if (!data.messages.some((m: Message) => m.id === msg.id) &&
+							!sseMessages.some((m) => m.id === msg.id)) {
+							sseMessages = [...sseMessages, msg];
+						}
+					}
+				} catch { /* ignore */ }
+			};
+			// Delay slightly to let reconnection settle
+			setTimeout(fetchMissed, 2000);
 		};
 	});
 
@@ -48,6 +64,7 @@
 	}
 
 	async function sendMessage(content: string) {
+		sendError = '';
 		try {
 			const res = await fetch(`/api/messages/${data.room.id}`, {
 				method: 'POST',
@@ -56,11 +73,20 @@
 			});
 
 			if (!res.ok) {
-				const err = await res.json();
-				console.error('Send failed:', err);
+				const err = await res.json().catch(() => ({ message: '送信に失敗しました' }));
+				sendError = err.message || '送信に失敗しました';
+				setTimeout(() => sendError = '', 3000);
+				return;
 			}
-		} catch (e) {
-			console.error('Send error:', e);
+
+			// Add sent message locally (won't come back via SSE)
+			const msg: Message = await res.json();
+			if (!sseMessages.some((m) => m.id === msg.id)) {
+				sseMessages = [...sseMessages, msg];
+			}
+		} catch {
+			sendError = 'ネットワークエラー。再度お試しください';
+			setTimeout(() => sendError = '', 3000);
 		}
 	}
 </script>
@@ -97,6 +123,13 @@
 		<LineView messages={allMessages} currentParticipantId={data.participant.id} />
 	{:else}
 		<NiconicoView messages={allMessages} currentParticipantId={data.participant.id} />
+	{/if}
+
+	<!-- Error Toast -->
+	{#if sendError}
+		<div class="px-4 py-2 bg-red-50 border-t border-red-200">
+			<p class="text-sm text-red-600 text-center">{sendError}</p>
+		</div>
 	{/if}
 
 	<!-- Input -->
