@@ -65,10 +65,6 @@
 						for (const msg of newMsgs) knownMessageIds.add(msg.id);
 						sseMessages = [...sseMessages, ...newMsgs].slice(-MAX_SSE_MESSAGES);
 					}
-					// Restore connected status after successful fetch fallback
-					if (eventSource?.readyState === EventSource.OPEN) {
-						connectionStatus = 'connected';
-					}
 				} catch { /* ignore */ }
 			}, 2000);
 		};

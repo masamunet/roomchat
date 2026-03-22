@@ -7,12 +7,7 @@ import { isValidInviteCode } from '$lib/server/validation.js';
 import { joinRateLimiter, JOIN_RATE_LIMIT } from '$lib/server/rate-limit.js';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async ({ params, getClientAddress }) => {
-	const clientIp = getClientAddress();
-	if (!joinRateLimiter.check(clientIp, JOIN_RATE_LIMIT.maxRequests, JOIN_RATE_LIMIT.windowMs)) {
-		error(429, 'アクセスが集中しています。しばらくしてからお試しください。');
-	}
-
+export const load: PageServerLoad = async ({ params }) => {
 	const code = params.inviteCode.toUpperCase();
 	if (!isValidInviteCode(code)) {
 		error(400, '無効な招待コードです');

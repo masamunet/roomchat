@@ -7,9 +7,10 @@ let pool: pg.Pool | null = null;
 const VALID_SSL_MODES = ['disable', 'no-verify', 'prefer', 'require'] as const;
 
 function buildSslConfig(): pg.PoolConfig['ssl'] {
-	const sslMode = env.DB_SSL_MODE ?? 'prefer';
+	let sslMode = env.DB_SSL_MODE ?? 'prefer';
 	if (!VALID_SSL_MODES.includes(sslMode as (typeof VALID_SSL_MODES)[number])) {
 		console.warn(`[WARN] Unknown DB_SSL_MODE "${sslMode}", defaulting to "prefer"`);
+		sslMode = 'prefer';
 	}
 	if (sslMode === 'disable') return false;
 	return {
