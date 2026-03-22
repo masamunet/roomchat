@@ -83,7 +83,7 @@
 			<button
 				type="button"
 				onclick={() => showEmojiPicker = !showEmojiPicker}
-				class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-lg"
+				class="absolute right-2 bottom-1 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-lg"
 				class:bg-blue-100={showEmojiPicker}
 				class:text-blue-600={showEmojiPicker}
 			>
