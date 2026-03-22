@@ -98,7 +98,7 @@
 	:global(.niconico-comment) {
 		position: absolute;
 		left: 100%;
-		white-space: pre-line;
+		white-space: pre;
 		font-size: 1.25rem;
 		font-weight: bold;
 		color: white;

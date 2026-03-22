@@ -35,16 +35,16 @@ export const actions: Actions = {
 		const name = formData.get('name')?.toString().trim();
 
 		if (!name || name.length === 0) {
-			return fail(400, { error: 'ルーム名を入力してください' });
+			return fail(400, { error: 'ルーム名を入力してください', action: 'create' as const });
 		}
 
 		if (name.length > 100) {
-			return fail(400, { error: 'ルーム名は100文字以内で入力してください' });
+			return fail(400, { error: 'ルーム名は100文字以内で入力してください', action: 'create' as const });
 		}
 
 		const activeCount = await countActiveRoomsByCreator(locals.user.id);
 		if (activeCount >= 3) {
-			return fail(400, { error: '作成できるルームは最大3つまでです（6時間で自動削除されます）' });
+			return fail(400, { error: '作成できるルームは最大3つまでです（6時間で自動削除されます）', action: 'create' as const });
 		}
 
 		const room = await createRoom(name, locals.user.id);
@@ -60,15 +60,19 @@ export const actions: Actions = {
 		const roomId = formData.get('roomId')?.toString();
 
 		if (!roomId || !isValidUUID(roomId)) {
-			return fail(400, { error: '無効なルームIDです' });
+			return fail(400, { error: '無効なルームIDです', action: 'delete' as const });
 		}
 
 		const room = await getRoomById(roomId);
 		if (!room || room.creatorId !== locals.user.id) {
-			return fail(403, { error: '権限がありません' });
+			return fail(403, { error: '権限がありません', action: 'delete' as const });
 		}
 
-		await deleteRoom(roomId);
+		try {
+			await deleteRoom(roomId);
+		} catch {
+			return fail(500, { error: '削除に失敗しました。再度お試しください', action: 'delete' as const });
+		}
 		sseManager.closeRoom(roomId);
 		return { success: true };
 	}
