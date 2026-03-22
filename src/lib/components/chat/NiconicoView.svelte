@@ -48,7 +48,8 @@
 
 		const el = document.createElement('div');
 		el.className = 'niconico-comment';
-		el.textContent = `${msg.nickname}: ${msg.content}`;
+		const displayContent = msg.content.split('\n').slice(0, 3).join('\n');
+		el.textContent = `${msg.nickname}: ${displayContent}`;
 
 		// Random vertical position (5% - 85%)
 		const top = 5 + Math.random() * 80;
@@ -94,7 +95,7 @@
 	:global(.niconico-comment) {
 		position: absolute;
 		left: 100%;
-		white-space: pre;
+		white-space: pre-line;
 		font-size: 1.25rem;
 		font-weight: bold;
 		color: white;

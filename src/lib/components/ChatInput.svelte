@@ -76,7 +76,7 @@
 				bind:this={inputEl}
 				bind:value={content}
 				onkeydown={handleKeydown}
-				placeholder="メッセージを入力..."
+				placeholder="メッセージを入力... (Ctrl+Enterで送信)"
 				rows="1"
 				class="w-full px-4 py-2.5 pr-11 border border-gray-300 rounded-2xl resize-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32"
 			></textarea>
