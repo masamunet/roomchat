@@ -1,4 +1,5 @@
 import { redirect, fail, error } from '@sveltejs/kit';
+import { dev } from '$app/environment';
 import { getRoomByInviteCode } from '$lib/server/repositories/room.js';
 import { createParticipant, isNicknameTaken } from '$lib/server/repositories/participant.js';
 import type { PageServerLoad, Actions } from './$types';
@@ -39,7 +40,7 @@ export const actions: Actions = {
 		cookies.set('participant_id', participant.id, {
 			path: '/',
 			httpOnly: true,
-			secure: false,
+			secure: !dev,
 			maxAge: 24 * 60 * 60,
 			sameSite: 'lax'
 		});
@@ -50,7 +51,7 @@ export const actions: Actions = {
 		cookies.set('room_participants', JSON.stringify(roomParticipants), {
 			path: '/',
 			httpOnly: true,
-			secure: false,
+			secure: !dev,
 			maxAge: 24 * 60 * 60,
 			sameSite: 'lax'
 		});

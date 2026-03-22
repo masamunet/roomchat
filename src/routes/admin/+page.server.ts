@@ -1,5 +1,5 @@
 import { redirect, fail } from '@sveltejs/kit';
-import { listRoomsByCreator, createRoom, deleteRoom, deleteExpiredRooms, countActiveRoomsByCreator } from '$lib/server/repositories/room.js';
+import { listRoomsByCreator, createRoom, deleteRoom, deleteExpiredRooms, countActiveRoomsByCreator, getRoomById } from '$lib/server/repositories/room.js';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -50,6 +50,11 @@ export const actions: Actions = {
 
 		if (!roomId) {
 			return fail(400, { error: '無効なルームIDです' });
+		}
+
+		const room = await getRoomById(roomId);
+		if (!room || room.creatorId !== locals.user.id) {
+			return fail(403, { error: '権限がありません' });
 		}
 
 		await deleteRoom(roomId);

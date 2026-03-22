@@ -1,11 +1,7 @@
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
 
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const generate = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 8);
 
 export function generateInviteCode(): string {
-	const id = nanoid(8);
-	return id
-		.split('')
-		.map((c) => ALPHABET[c.charCodeAt(0) % ALPHABET.length])
-		.join('');
+	return generate();
 }

@@ -1,4 +1,5 @@
 import { redirect, error } from '@sveltejs/kit';
+import { dev } from '$app/environment';
 import * as arctic from 'arctic';
 import { getGoogleOAuth, findOrCreateUser, createSession } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
@@ -44,7 +45,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		cookies.set('session_id', session.id, {
 			path: '/',
 			httpOnly: true,
-			secure: false,
+			secure: !dev,
 			maxAge: 30 * 24 * 60 * 60,
 			sameSite: 'lax'
 		});

@@ -4,18 +4,19 @@ export interface DbClient {
 	query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
 }
 
-let dbClient: DbClient | null = null;
+let dbPromise: Promise<DbClient> | null = null;
 
-export async function getDb(): Promise<DbClient> {
-	if (dbClient) return dbClient;
-
-	if (env.DATABASE_URL) {
-		const { createPostgresClient } = await import('./postgres.js');
-		dbClient = await createPostgresClient(env.DATABASE_URL);
-	} else {
-		const { createPGLiteClient } = await import('./pglite.js');
-		dbClient = await createPGLiteClient();
+export function getDb(): Promise<DbClient> {
+	if (!dbPromise) {
+		dbPromise = (async () => {
+			if (env.DATABASE_URL) {
+				const { createPostgresClient } = await import('./postgres.js');
+				return createPostgresClient(env.DATABASE_URL);
+			} else {
+				const { createPGLiteClient } = await import('./pglite.js');
+				return createPGLiteClient();
+			}
+		})();
 	}
-
-	return dbClient;
+	return dbPromise;
 }

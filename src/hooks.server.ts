@@ -2,13 +2,16 @@ import type { Handle } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db/index.js';
 import { runMigrations } from '$lib/server/db/migrate.js';
 
-let initialized = false;
+let initPromise: Promise<void> | null = null;
 
-async function initializeDb() {
-	if (initialized) return;
-	const db = await getDb();
-	await runMigrations(db);
-	initialized = true;
+function initializeDb() {
+	if (!initPromise) {
+		initPromise = (async () => {
+			const db = await getDb();
+			await runMigrations(db);
+		})();
+	}
+	return initPromise;
 }
 
 export const handle: Handle = async ({ event, resolve }) => {

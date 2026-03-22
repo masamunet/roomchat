@@ -4,7 +4,22 @@ import { getParticipantById } from '$lib/server/repositories/participant.js';
 import { sseManager } from '$lib/server/sse/manager.js';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ params, url }) => {
+function getParticipantIdFromCookies(cookies: { get: (name: string) => string | undefined }, roomId: string): string | null {
+	const roomParticipants = JSON.parse(cookies.get('room_participants') ?? '{}');
+	return roomParticipants[roomId] ?? null;
+}
+
+export const GET: RequestHandler = async ({ params, url, cookies }) => {
+	// Verify participant
+	const participantId = getParticipantIdFromCookies(cookies, params.roomId);
+	if (!participantId) {
+		error(401, '入室が必要です');
+	}
+	const participant = await getParticipantById(participantId);
+	if (!participant || participant.roomId !== params.roomId) {
+		error(403, 'このルームに参加していません');
+	}
+
 	const limit = parseInt(url.searchParams.get('limit') ?? '100', 10);
 	const before = url.searchParams.get('before') ?? undefined;
 
@@ -13,8 +28,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 };
 
 export const POST: RequestHandler = async ({ params, request, cookies }) => {
-	const roomParticipants = JSON.parse(cookies.get('room_participants') ?? '{}');
-	const participantId = roomParticipants[params.roomId];
+	const participantId = getParticipantIdFromCookies(cookies, params.roomId);
 
 	if (!participantId) {
 		error(401, '入室が必要です');

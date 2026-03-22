@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import type { Message } from '$lib/types/index.js';
 
 	type Props = {
@@ -10,11 +10,19 @@
 	let { messages, currentParticipantId }: Props = $props();
 	let container: HTMLDivElement;
 	let processedCount = $state(0);
+	let mounted = $state(false);
+
+	onMount(() => {
+		// Skip initial messages — only animate new ones arriving via SSE
+		processedCount = messages.length;
+		mounted = true;
+	});
 
 	// Track which messages have already been animated
 	$effect(() => {
+		if (!mounted) return;
 		if (messages.length > processedCount) {
-			const newMessages = messages.slice(processedCount);
+			const newMessages = messages.slice(untrack(() => processedCount));
 			for (const msg of newMessages) {
 				spawnComment(msg);
 			}

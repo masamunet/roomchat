@@ -2,8 +2,27 @@ import type { Message } from '$lib/types/index.js';
 
 type SSEController = ReadableStreamDefaultController<Uint8Array>;
 
+const encoder = new TextEncoder();
+
 class SSEManager {
 	private rooms = new Map<string, Set<SSEController>>();
+	private keepaliveInterval: ReturnType<typeof setInterval> | null = null;
+
+	constructor() {
+		// Send keepalive comment every 30 seconds to prevent proxy/LB timeouts
+		this.keepaliveInterval = setInterval(() => {
+			const keepalive = encoder.encode(': keepalive\n\n');
+			for (const [, controllers] of this.rooms) {
+				for (const controller of controllers) {
+					try {
+						controller.enqueue(keepalive);
+					} catch {
+						controllers.delete(controller);
+					}
+				}
+			}
+		}, 30_000);
+	}
 
 	subscribe(roomId: string, controller: SSEController): void {
 		if (!this.rooms.has(roomId)) {
@@ -27,13 +46,12 @@ class SSEManager {
 		if (!controllers) return;
 
 		const data = `data: ${JSON.stringify(message)}\n\n`;
-		const encoded = new TextEncoder().encode(data);
+		const encoded = encoder.encode(data);
 
 		for (const controller of controllers) {
 			try {
 				controller.enqueue(encoded);
 			} catch {
-				// Controller might be closed, remove it
 				controllers.delete(controller);
 			}
 		}

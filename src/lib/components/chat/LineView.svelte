@@ -12,7 +12,11 @@
 
 	$effect(() => {
 		if (messages.length && scrollContainer) {
-			scrollContainer.scrollTop = scrollContainer.scrollHeight;
+			const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+			const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+			if (isNearBottom) {
+				scrollContainer.scrollTop = scrollContainer.scrollHeight;
+			}
 		}
 	});
 </script>
