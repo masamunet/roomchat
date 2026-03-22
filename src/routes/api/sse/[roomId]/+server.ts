@@ -3,10 +3,15 @@ import { sseManager } from '$lib/server/sse/manager.js';
 import { getParticipantById } from '$lib/server/repositories/participant.js';
 import { getRoomById } from '$lib/server/repositories/room.js';
 import { parseRoomParticipants } from '$lib/server/cookies.js';
+import { isValidUUID } from '$lib/server/validation.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params, cookies }) => {
 	const roomId = params.roomId;
+
+	if (!isValidUUID(roomId)) {
+		error(400, '無効なルームIDです');
+	}
 
 	// Verify room is active
 	const room = await getRoomById(roomId);
@@ -25,17 +30,26 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
 		error(403, 'このルームに参加していません');
 	}
 
+	// Check connection limit before creating stream
+	if (sseManager.getConnectionCount(roomId) >= 100) {
+		error(503, '接続数が上限に達しています。しばらくしてから再度お試しください');
+	}
+
 	let sseController: ReadableStreamDefaultController<Uint8Array>;
 
 	const stream = new ReadableStream<Uint8Array>({
 		start(controller) {
 			sseController = controller;
 
+			const accepted = sseManager.subscribe(roomId, controller, participantId);
+			if (!accepted) {
+				controller.close();
+				return;
+			}
+
 			// Send initial connection message
 			const connectMsg = `data: ${JSON.stringify({ type: 'connected' })}\n\n`;
 			controller.enqueue(new TextEncoder().encode(connectMsg));
-
-			sseManager.subscribe(roomId, controller, participantId);
 		},
 		cancel() {
 			sseManager.unsubscribe(roomId, sseController);

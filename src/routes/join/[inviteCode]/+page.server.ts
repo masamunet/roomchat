@@ -36,10 +36,21 @@ export const actions: Actions = {
 			return fail(400, { error: 'このニックネームは既に使用されています' });
 		}
 
-		const participant = await createParticipant(room.id, nickname);
+		let participant;
+		try {
+			participant = await createParticipant(room.id, nickname);
+		} catch (e: unknown) {
+			const isUniqueViolation =
+				e instanceof Error && 'code' in e && (e as { code: string }).code === '23505';
+			if (isUniqueViolation) {
+				return fail(400, { error: 'このニックネームは既に使用されています' });
+			}
+			throw e;
+		}
 
-		// Store room-participant mapping
+		// Store room-participant mapping (delete + re-add to keep insertion order fresh)
 		const roomParticipants = parseRoomParticipants(cookies.get('room_participants'));
+		delete roomParticipants[room.id];
 		roomParticipants[room.id] = participant.id;
 		cookies.set('room_participants', encodeRoomParticipants(roomParticipants), {
 			path: '/',

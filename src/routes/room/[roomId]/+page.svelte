@@ -9,6 +9,7 @@
 	import type { Message, ChatViewMode } from '$lib/types/index.js';
 
 	let { data } = $props();
+	const MAX_SSE_MESSAGES = 500;
 	let sseMessages = $state<Message[]>([]);
 	let allMessages = $derived<Message[]>([...data.messages, ...sseMessages]);
 	let viewMode = $state<ChatViewMode>('slack');
@@ -31,7 +32,7 @@
 			// Deduplicate (message might already exist from initial load)
 			if (!data.messages.some((m: Message) => m.id === msg.id) &&
 				!sseMessages.some((m) => m.id === msg.id)) {
-				sseMessages = [...sseMessages, msg];
+				sseMessages = [...sseMessages, msg].slice(-MAX_SSE_MESSAGES);
 			}
 		};
 		eventSource.onerror = () => {
@@ -41,12 +42,14 @@
 					const res = await fetch(`/api/messages/${data.room.id}?limit=50`);
 					if (!res.ok) return;
 					const msgs: Message[] = await res.json();
+					let updated = sseMessages;
 					for (const msg of msgs) {
 						if (!data.messages.some((m: Message) => m.id === msg.id) &&
-							!sseMessages.some((m) => m.id === msg.id)) {
-							sseMessages = [...sseMessages, msg];
+							!updated.some((m) => m.id === msg.id)) {
+							updated = [...updated, msg];
 						}
 					}
+					sseMessages = updated.slice(-MAX_SSE_MESSAGES);
 				} catch { /* ignore */ }
 			};
 			// Delay slightly to let reconnection settle
@@ -82,7 +85,7 @@
 			// Add sent message locally (won't come back via SSE)
 			const msg: Message = await res.json();
 			if (!sseMessages.some((m) => m.id === msg.id)) {
-				sseMessages = [...sseMessages, msg];
+				sseMessages = [...sseMessages, msg].slice(-MAX_SSE_MESSAGES);
 			}
 		} catch {
 			sendError = 'ネットワークエラー。再度お試しください';

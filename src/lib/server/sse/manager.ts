@@ -9,17 +9,18 @@ interface ControllerInfo {
 
 const encoder = new TextEncoder();
 
+const MAX_CONNECTIONS_PER_ROOM = 100;
+
 class SSEManager {
 	private rooms = new Map<string, Set<ControllerInfo>>();
 	private keepaliveInterval: ReturnType<typeof setInterval>;
 
 	constructor() {
 		this.keepaliveInterval = setInterval(() => {
-			const keepalive = encoder.encode(': keepalive\n\n');
 			for (const [, infos] of this.rooms) {
 				for (const info of infos) {
 					try {
-						info.controller.enqueue(keepalive);
+						info.controller.enqueue(encoder.encode(': keepalive\n\n'));
 					} catch {
 						infos.delete(info);
 					}
@@ -28,11 +29,16 @@ class SSEManager {
 		}, 30_000);
 	}
 
-	subscribe(roomId: string, controller: SSEController, participantId: string): void {
+	subscribe(roomId: string, controller: SSEController, participantId: string): boolean {
 		if (!this.rooms.has(roomId)) {
 			this.rooms.set(roomId, new Set());
 		}
-		this.rooms.get(roomId)!.add({ controller, participantId });
+		const infos = this.rooms.get(roomId)!;
+		if (infos.size >= MAX_CONNECTIONS_PER_ROOM) {
+			return false;
+		}
+		infos.add({ controller, participantId });
+		return true;
 	}
 
 	unsubscribe(roomId: string, controller: SSEController): void {

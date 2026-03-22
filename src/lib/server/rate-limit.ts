@@ -21,6 +21,11 @@ class RateLimiter {
 		}, 60_000);
 	}
 
+	destroy(): void {
+		clearInterval(this.cleanupInterval);
+		this.windows.clear();
+	}
+
 	check(key: string, maxRequests: number, windowMs: number): boolean {
 		const now = Date.now();
 		const timestamps = this.windows.get(key) ?? [];
@@ -39,6 +44,16 @@ class RateLimiter {
 	}
 }
 
+// Module-level singleton with HMR guard
+const globalKey = '__roomchat_rate_limiter__';
+const g = globalThis as Record<string, unknown>;
+
+if (g[globalKey]) {
+	(g[globalKey] as RateLimiter).destroy();
+}
+
 // 10 messages per 10 seconds per participant
 export const messageRateLimiter = new RateLimiter();
+g[globalKey] = messageRateLimiter;
+
 export const MESSAGE_RATE_LIMIT = { maxRequests: 10, windowMs: 10_000 };

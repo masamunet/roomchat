@@ -62,11 +62,14 @@
 		activeElements.push(el);
 		container.appendChild(el);
 
-		// Remove after animation
-		el.addEventListener('animationend', () => {
+		const cleanup = () => {
 			el.remove();
 			activeElements = activeElements.filter((e) => e !== el);
-		});
+		};
+
+		// Remove after animation (with timeout fallback for background tabs)
+		el.addEventListener('animationend', cleanup, { once: true });
+		setTimeout(cleanup, (duration + 1) * 1000);
 	}
 </script>
 

@@ -14,6 +14,10 @@ function getParticipantIdFromCookies(cookies: { get: (name: string) => string | 
 }
 
 export const GET: RequestHandler = async ({ params, url, cookies }) => {
+	if (!isValidUUID(params.roomId)) {
+		error(400, '無効なルームIDです');
+	}
+
 	// Verify room is active
 	const room = await getRoomById(params.roomId);
 	if (!room || !room.isActive) {
@@ -43,6 +47,10 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 };
 
 export const POST: RequestHandler = async ({ params, request, cookies }) => {
+	if (!isValidUUID(params.roomId)) {
+		error(400, '無効なルームIDです');
+	}
+
 	// Verify room is active
 	const room = await getRoomById(params.roomId);
 	if (!room || !room.isActive) {

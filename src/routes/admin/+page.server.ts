@@ -1,5 +1,6 @@
 import { redirect, fail } from '@sveltejs/kit';
 import { listRoomsByCreator, createRoom, deleteRoom, deleteExpiredRooms, countActiveRoomsByCreator, getRoomById } from '$lib/server/repositories/room.js';
+import { isValidUUID } from '$lib/server/validation.js';
 import type { PageServerLoad, Actions } from './$types';
 
 let lastCleanup = 0;
@@ -54,7 +55,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const roomId = formData.get('roomId')?.toString();
 
-		if (!roomId) {
+		if (!roomId || !isValidUUID(roomId)) {
 			return fail(400, { error: '無効なルームIDです' });
 		}
 

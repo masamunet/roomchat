@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { env } from '$env/dynamic/private';
 
 function getSecret(): string {
@@ -36,9 +36,11 @@ export function parseRoomParticipants(
 		const sig = raw.slice(0, dotIndex);
 		const json = raw.slice(dotIndex + 1);
 
-		// Verify signature
+		// Verify signature with timing-safe comparison
 		const expected = sign(json);
-		if (sig !== expected) return {};
+		const sigBuf = Buffer.from(sig, 'hex');
+		const expectedBuf = Buffer.from(expected, 'hex');
+		if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) return {};
 
 		const parsed = JSON.parse(json);
 		if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {

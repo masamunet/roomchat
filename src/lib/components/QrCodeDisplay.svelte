@@ -9,8 +9,14 @@
 
 	let { value, size = 256 }: Props = $props();
 	let canvas: HTMLCanvasElement;
+	let mounted = $state(false);
 
 	onMount(() => {
+		mounted = true;
+	});
+
+	$effect(() => {
+		if (!mounted || !canvas) return;
 		QRCode.toCanvas(canvas, value, {
 			width: size,
 			margin: 2,
