@@ -3,10 +3,15 @@ import { dev } from '$app/environment';
 import { getRoomByInviteCode } from '$lib/server/repositories/room.js';
 import { createParticipant } from '$lib/server/repositories/participant.js';
 import { parseRoomParticipants, encodeRoomParticipants } from '$lib/server/cookies.js';
+import { isValidInviteCode } from '$lib/server/validation.js';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const room = await getRoomByInviteCode(params.inviteCode.toUpperCase());
+	const code = params.inviteCode.toUpperCase();
+	if (!isValidInviteCode(code)) {
+		error(400, '無効な招待コードです');
+	}
+	const room = await getRoomByInviteCode(code);
 	if (!room) {
 		error(404, 'ルームが見つかりません。招待コードを確認してください。');
 	}
@@ -15,7 +20,11 @@ export const load: PageServerLoad = async ({ params }) => {
 
 export const actions: Actions = {
 	default: async ({ request, params, cookies }) => {
-		const room = await getRoomByInviteCode(params.inviteCode.toUpperCase());
+		const code = params.inviteCode.toUpperCase();
+		if (!isValidInviteCode(code)) {
+			return fail(400, { error: '無効な招待コードです' });
+		}
+		const room = await getRoomByInviteCode(code);
 		if (!room) {
 			return fail(404, { error: 'ルームが見つかりません' });
 		}

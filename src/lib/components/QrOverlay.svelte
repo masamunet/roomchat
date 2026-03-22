@@ -10,11 +10,16 @@
 	let { joinUrl, inviteCode, onClose }: Props = $props();
 </script>
 
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape') onClose(); }} />
+
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+	role="dialog"
+	aria-modal="true"
+	tabindex="-1"
 	onclick={onClose}
-	onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
+	onkeydown={() => {}}
 >
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div

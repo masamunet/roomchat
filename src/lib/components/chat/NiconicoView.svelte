@@ -93,26 +93,22 @@
 <style>
 	:global(.niconico-comment) {
 		position: absolute;
+		left: 100%;
 		white-space: nowrap;
 		font-size: 1.25rem;
 		font-weight: bold;
 		color: white;
 		text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), -1px -1px 2px rgba(0, 0, 0, 0.8);
 		pointer-events: none;
+		will-change: transform;
 		animation-name: niconico-scroll;
 		animation-timing-function: linear;
 		animation-fill-mode: forwards;
-		right: -100%;
 	}
 
 	@keyframes niconico-scroll {
-		from {
-			transform: translateX(0);
-			right: -100%;
-		}
 		to {
-			transform: translateX(-100%);
-			right: 100%;
+			transform: translateX(calc(-100vw - 100%));
 		}
 	}
 </style>

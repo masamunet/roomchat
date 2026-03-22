@@ -35,6 +35,17 @@
 			handleSubmit();
 		}
 	}
+
+	function autoResize() {
+		if (!inputEl) return;
+		inputEl.style.height = 'auto';
+		inputEl.style.height = `${inputEl.scrollHeight}px`;
+	}
+
+	$effect(() => {
+		content;
+		autoResize();
+	});
 </script>
 
 <div class="border-t border-gray-200 bg-white">

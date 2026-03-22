@@ -16,6 +16,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>RoomChat</title>
+</svelte:head>
+
 <div class="flex flex-col items-center justify-center min-h-[calc(100dvh-60px)] px-4">
 	<div class="w-full max-w-sm">
 		<div class="text-center mb-8">

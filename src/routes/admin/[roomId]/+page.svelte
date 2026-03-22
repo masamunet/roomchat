@@ -12,6 +12,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>{data.room.name} - RoomChat</title>
+</svelte:head>
+
 <div class="max-w-md mx-auto px-4 py-6">
 	<a href="/admin" class="text-sm text-blue-600 hover:text-blue-800 mb-4 inline-block">&larr; ルーム一覧に戻る</a>
 

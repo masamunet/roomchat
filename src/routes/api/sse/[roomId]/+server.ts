@@ -6,6 +6,8 @@ import { parseRoomParticipants } from '$lib/server/cookies.js';
 import { isValidUUID } from '$lib/server/validation.js';
 import type { RequestHandler } from './$types';
 
+const encoder = new TextEncoder();
+
 export const GET: RequestHandler = async ({ params, cookies }) => {
 	const roomId = params.roomId;
 
@@ -49,7 +51,7 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
 
 			// Send initial connection message
 			const connectMsg = `event: connected\ndata: {}\n\n`;
-			controller.enqueue(new TextEncoder().encode(connectMsg));
+			controller.enqueue(encoder.encode(connectMsg));
 		},
 		cancel() {
 			sseManager.unsubscribe(roomId, sseController);
