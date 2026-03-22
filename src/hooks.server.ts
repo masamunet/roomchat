@@ -27,9 +27,8 @@ async function cleanExpiredSessions() {
 export const handle: Handle = async ({ event, resolve }) => {
 	await initializeDb();
 
-	// CSRF protection for all non-GET/HEAD/OPTIONS requests
-	const unsafeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
-	if (unsafeMethods.includes(event.request.method)) {
+	// CSRF protection for API routes (form actions are handled by SvelteKit's built-in csrf config)
+	if (event.url.pathname.startsWith('/api/') && event.request.method !== 'GET') {
 		const origin = event.request.headers.get('origin');
 		if (!origin || origin !== event.url.origin) {
 			return new Response(JSON.stringify({ message: '不正なリクエストです' }), {

@@ -8,10 +8,11 @@ const config = {
 			trustedOrigins: []
 		},
 		csp: {
+			mode: 'auto',
 			directives: {
 				'default-src': ['self'],
 				'script-src': ['self'],
-				'style-src': ['self'],
+				'style-src': ['self', 'unsafe-inline'],
 				'img-src': ['self', 'https://*.googleusercontent.com', 'data:'],
 				'connect-src': ['self'],
 				'font-src': ['self']

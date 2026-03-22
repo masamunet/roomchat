@@ -16,7 +16,9 @@
 	let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
 
 	onMount(() => {
-		// Skip initial messages — only animate new ones arriving via SSE
+		// Skip initial messages — only animate new ones arriving via SSE.
+		// On re-mount (e.g. view mode switch via {#key}), this also prevents
+		// replaying all existing messages as animations.
 		processedCount = messages.length;
 		mounted = true;
 	});
@@ -30,6 +32,10 @@
 			el.remove();
 		}
 		activeElements = [];
+		// Clean up liveRegion announcements
+		if (liveRegion) {
+			liveRegion.textContent = '';
+		}
 	});
 
 	// Track which messages have already been animated
@@ -47,11 +53,14 @@
 	function spawnComment(msg: Message) {
 		if (!container) return;
 
-		// Announce to screen readers
+		// Announce to screen readers (cap at 20 nodes to prevent DOM bloat)
 		if (liveRegion) {
 			const announcement = document.createElement('p');
 			announcement.textContent = `${msg.nickname}: ${msg.content}`;
 			liveRegion.appendChild(announcement);
+			while (liveRegion.childNodes.length > 20) {
+				liveRegion.firstChild?.remove();
+			}
 			setTimeout(() => announcement.remove(), 10_000);
 		}
 

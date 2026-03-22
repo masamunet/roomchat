@@ -93,8 +93,8 @@
 					</button>
 
 					{#if menuOpen}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
+							role="presentation"
 							class="fixed inset-0 z-10"
 							onclick={closeMenu}
 							onkeydown={() => {}}
