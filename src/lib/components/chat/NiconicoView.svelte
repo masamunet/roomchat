@@ -68,10 +68,14 @@
 		const el = document.createElement('div');
 		el.className = 'niconico-comment';
 		el.setAttribute('aria-hidden', 'true');
-		el.textContent = `${msg.nickname}: ${msg.content}`;
+		const lines = msg.content.split('\n');
+		const displayContent = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '...' : '');
+		el.textContent = `${msg.nickname}: ${displayContent}`;
 
-		// Random vertical position (5% - 85%)
-		const top = 5 + Math.random() * 80;
+		// Random vertical position — adjust upper bound for multi-line comments
+		const lineCount = Math.min(lines.length, 3);
+		const maxTop = 85 - (lineCount - 1) * 8;
+		const top = 5 + Math.random() * Math.max(maxTop - 5, 10);
 		el.style.top = `${top}%`;
 
 		// Random duration (5-8 seconds)
@@ -115,7 +119,7 @@
 	:global(.niconico-comment) {
 		position: absolute;
 		left: 100%;
-		white-space: nowrap;
+		white-space: pre;
 		font-size: 1.25rem;
 		font-weight: bold;
 		color: white;

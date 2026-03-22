@@ -80,11 +80,12 @@
 						bind:this={triggerButton}
 						onclick={toggleMenu}
 						aria-expanded={menuOpen}
-						aria-haspopup="true"
+						aria-haspopup="menu"
+						aria-label="ユーザーメニュー"
 						class="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-gray-300"
 					>
 						{#if user.avatarUrl}
-							<img src={user.avatarUrl} alt={user.name ?? ''} class="w-8 h-8 rounded-full" />
+							<img src={user.avatarUrl} alt={user.name ?? 'ユーザー'} class="w-8 h-8 rounded-full" />
 						{:else}
 							<div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
 								{(user.name ?? user.email)[0].toUpperCase()}

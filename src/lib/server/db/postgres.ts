@@ -28,6 +28,10 @@ export async function createPostgresClient(connectionString: string): Promise<Db
 			ssl: buildSslConfig()
 		});
 
+		pool.on('error', (err) => {
+			console.error('Unexpected pool error:', err);
+		});
+
 		// Graceful shutdown (registered once with pool creation)
 		const shutdown = () => {
 			pool?.end().catch((e) => console.error('Pool shutdown error:', e));

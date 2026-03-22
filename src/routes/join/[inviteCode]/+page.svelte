@@ -24,10 +24,12 @@
 					required
 					maxlength="50"
 					autocomplete="off"
+					aria-label="ニックネーム"
+					aria-describedby={form?.error ? 'nickname-error' : undefined}
 					class="w-full px-4 py-3 text-center text-lg border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 				/>
 				{#if form?.error}
-					<p class="text-sm text-red-600 mt-1 text-center">{form.error}</p>
+					<p id="nickname-error" class="text-sm text-red-600 mt-1 text-center" role="alert">{form.error}</p>
 				{/if}
 			</div>
 			<button

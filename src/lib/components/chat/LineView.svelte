@@ -52,7 +52,7 @@
 							>
 								{msg.content}
 							</div>
-							<time class="text-[10px] text-white/70 flex-shrink-0" datetime={new Date(msg.createdAt).toISOString()}>
+							<time class="text-[10px] text-white/90 flex-shrink-0" datetime={new Date(msg.createdAt).toISOString()}>
 								{format(new Date(msg.createdAt), 'HH:mm')}
 							</time>
 						</div>
