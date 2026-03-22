@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: roomchat
+    runtime: node
+    plan: free
+    healthCheckPath: /
+    buildCommand: npm install && npm run build
+    startCommand: node build
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: roomchat-db
+          property: connectionString
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: ORIGIN
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: roomchat-db
+    plan: free
