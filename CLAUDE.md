@@ -14,15 +14,6 @@ RoomChat is a real-time anonymous chat application built with SvelteKit. Users c
 - **Type check:** `npm run check`
 - **Type check (watch):** `npm run check:watch`
 
-### Worktree Preview
-
-worktreeでプレビューする場合は、`.env.prod`を`.env`としてコピーしてから起動すること:
-
-```bash
-cp .env.prod .env
-npm run build && npm run preview
-```
-
 ## Tech Stack
 
 - **Frontend:** Svelte 5 (Runes), Tailwind CSS 4, Vite 7
