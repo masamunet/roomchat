@@ -42,6 +42,12 @@
 		</div>
 	</form>
 
+	{#if form?.error && !deleteTargetRoomId}
+		<div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+			{form.error}
+		</div>
+	{/if}
+
 	<!-- Room List -->
 	<div class="space-y-3">
 		<h2 class="text-lg font-semibold text-gray-800">ルーム一覧</h2>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { fade, scale } from 'svelte/transition';
+
 	type Props = {
 		open: boolean;
 		title: string;
@@ -18,9 +20,45 @@
 		onConfirm,
 		onCancel
 	}: Props = $props();
+
+	let cancelButtonRef = $state<HTMLButtonElement>();
+	let previousFocus: HTMLElement | null = null;
+
+	$effect(() => {
+		if (open) {
+			previousFocus = document.activeElement as HTMLElement | null;
+			cancelButtonRef?.focus();
+		} else if (previousFocus) {
+			previousFocus.focus();
+			previousFocus = null;
+		}
+	});
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (!open) return;
+		if (e.key === 'Escape') {
+			onCancel();
+			return;
+		}
+		if (e.key === 'Tab') {
+			const focusable = Array.from(
+				document.querySelectorAll<HTMLElement>('[role="alertdialog"] button')
+			);
+			if (focusable.length === 0) return;
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		}
+	}
 </script>
 
-<svelte:window onkeydown={(e) => { if (open && e.key === 'Escape') onCancel(); }} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if open}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -32,13 +70,17 @@
 		aria-describedby="confirm-dialog-message"
 		tabindex="-1"
 		onclick={onCancel}
-		onkeydown={() => {}}
+		onkeydown={(e) => { if (e.key === 'Enter') onCancel(); }}
+		transition:fade={{ duration: 150 }}
 	>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
 			class="bg-white rounded-2xl shadow-2xl p-6 mx-4 max-w-sm w-full"
+			role="document"
 			onclick={(e) => e.stopPropagation()}
-			onkeydown={() => {}}
+			onkeydown={(e) => e.stopPropagation()}
+			transition:scale={{ duration: 150, start: 0.95 }}
 		>
 			<div class="flex flex-col items-center text-center">
 				<div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
@@ -55,6 +97,7 @@
 			</div>
 			<div class="flex gap-3">
 				<button
+					bind:this={cancelButtonRef}
 					onclick={onCancel}
 					class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
 				>
