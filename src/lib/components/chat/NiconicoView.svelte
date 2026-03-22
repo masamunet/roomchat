@@ -68,7 +68,9 @@
 		container.appendChild(el);
 
 		const cleanup = () => {
+			if (!el.parentNode) return; // already cleaned up
 			el.remove();
+			clearTimeout(timeoutId);
 			activeElements = activeElements.filter((e) => e !== el);
 			activeTimeouts = activeTimeouts.filter((t) => t !== timeoutId);
 		};

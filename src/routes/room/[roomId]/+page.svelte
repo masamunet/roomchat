@@ -11,11 +11,13 @@
 	let { data } = $props();
 	const MAX_SSE_MESSAGES = 500;
 	let sseMessages = $state<Message[]>([]);
+	const knownMessageIds = new Set<string>(data.messages.map((m: Message) => m.id));
 	let allMessages = $derived<Message[]>([...data.messages, ...sseMessages]);
 	let viewMode = $state<ChatViewMode>('slack');
 	let showQrOverlay = $state(false);
 	let sendError = $state('');
 	let eventSource: EventSource | null = null;
+	let fetchMissedTimer: ReturnType<typeof setTimeout> | null = null;
 
 	onMount(() => {
 		// Restore view mode
@@ -26,41 +28,44 @@
 
 		// Connect SSE
 		eventSource = new EventSource(`/api/sse/${data.room.id}`);
-		eventSource.onmessage = (event) => {
+		eventSource.addEventListener('chat', (event) => {
 			let msg;
 			try {
 				msg = JSON.parse(event.data);
 			} catch { return; }
-			if (msg.type === 'connected') return;
 			// Deduplicate (message might already exist from initial load)
-			if (!data.messages.some((m: Message) => m.id === msg.id) &&
-				!sseMessages.some((m) => m.id === msg.id)) {
+			if (!knownMessageIds.has(msg.id)) {
+				knownMessageIds.add(msg.id);
 				sseMessages = [...sseMessages, msg].slice(-MAX_SSE_MESSAGES);
 			}
-		};
+		});
 		eventSource.onerror = () => {
-			// EventSource auto-reconnects; fetch missed messages on reconnect
-			const fetchMissed = async () => {
+			// Debounce: clear previous timer to avoid burst of fetches
+			if (fetchMissedTimer) clearTimeout(fetchMissedTimer);
+			fetchMissedTimer = setTimeout(async () => {
+				fetchMissedTimer = null;
 				try {
-					const res = await fetch(`/api/messages/${data.room.id}?limit=50`);
+					// Fetch newest messages since last known
+					const lastId = sseMessages.length > 0
+						? sseMessages[sseMessages.length - 1].id
+						: (data.messages.length > 0 ? data.messages[data.messages.length - 1].id : undefined);
+					const afterParam = lastId ? `&after=${lastId}` : '';
+					const res = await fetch(`/api/messages/${data.room.id}?limit=50${afterParam}`);
 					if (!res.ok) return;
 					const msgs: Message[] = await res.json();
-					const newMsgs = msgs.filter((msg) =>
-						!data.messages.some((m: Message) => m.id === msg.id) &&
-						!sseMessages.some((m) => m.id === msg.id)
-					);
+					const newMsgs = msgs.filter((msg) => !knownMessageIds.has(msg.id));
 					if (newMsgs.length > 0) {
+						for (const msg of newMsgs) knownMessageIds.add(msg.id);
 						sseMessages = [...sseMessages, ...newMsgs].slice(-MAX_SSE_MESSAGES);
 					}
 				} catch { /* ignore */ }
-			};
-			// Delay slightly to let reconnection settle
-			setTimeout(fetchMissed, 2000);
+			}, 2000);
 		};
 	});
 
 	onDestroy(() => {
 		eventSource?.close();
+		if (fetchMissedTimer) clearTimeout(fetchMissedTimer);
 	});
 
 	function handleViewChange(mode: ChatViewMode) {
@@ -86,7 +91,8 @@
 
 			// Add sent message locally (won't come back via SSE)
 			const msg: Message = await res.json();
-			if (!sseMessages.some((m) => m.id === msg.id)) {
+			if (!knownMessageIds.has(msg.id)) {
+				knownMessageIds.add(msg.id);
 				sseMessages = [...sseMessages, msg].slice(-MAX_SSE_MESSAGES);
 			}
 		} catch {

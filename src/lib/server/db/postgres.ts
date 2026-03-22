@@ -11,14 +11,14 @@ export async function createPostgresClient(connectionString: string): Promise<Db
 			idleTimeoutMillis: 30_000,
 			connectionTimeoutMillis: 5_000
 		});
-	}
 
-	// Graceful shutdown
-	const shutdown = () => {
-		pool?.end().catch(() => {});
-	};
-	process.on('SIGTERM', shutdown);
-	process.on('SIGINT', shutdown);
+		// Graceful shutdown (registered once with pool creation)
+		const shutdown = () => {
+			pool?.end().catch((e) => console.error('Pool shutdown error:', e));
+		};
+		process.on('SIGTERM', shutdown);
+		process.on('SIGINT', shutdown);
+	}
 
 	return {
 		async query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: T[] }> {

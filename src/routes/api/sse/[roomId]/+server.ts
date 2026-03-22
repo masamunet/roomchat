@@ -48,7 +48,7 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
 			}
 
 			// Send initial connection message
-			const connectMsg = `data: ${JSON.stringify({ type: 'connected' })}\n\n`;
+			const connectMsg = `event: connected\ndata: {}\n\n`;
 			controller.enqueue(new TextEncoder().encode(connectMsg));
 		},
 		cancel() {

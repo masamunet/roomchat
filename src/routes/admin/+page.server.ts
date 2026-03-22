@@ -15,7 +15,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const now = Date.now();
 	if (now - lastCleanup > 60_000) {
 		lastCleanup = now;
-		await deleteExpiredRooms();
+		const deletedIds = await deleteExpiredRooms();
+		for (const id of deletedIds) {
+			sseManager.closeRoom(id);
+		}
 	}
 
 	const rooms = await listRoomsByCreator(locals.user.id);

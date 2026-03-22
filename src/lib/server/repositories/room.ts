@@ -79,15 +79,13 @@ export async function deleteRoom(roomId: string): Promise<void> {
 	await db.query(`DELETE FROM rooms WHERE id = $1`, [roomId]);
 }
 
-export async function deleteExpiredRooms(): Promise<number> {
+export async function deleteExpiredRooms(): Promise<string[]> {
 	const db = await getDb();
-	const result = await db.query<{ count: string }>(
-		`WITH deleted AS (
-			DELETE FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours'
-			RETURNING id
-		) SELECT count(*)::text as count FROM deleted`
+	const result = await db.query<{ id: string }>(
+		`DELETE FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours'
+		 RETURNING id`
 	);
-	return parseInt(result.rows[0]?.count ?? '0', 10);
+	return result.rows.map((r) => r.id);
 }
 
 export async function countActiveRoomsByCreator(creatorId: string): Promise<number> {

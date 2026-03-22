@@ -1,7 +1,7 @@
 import { redirect, fail, error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 import { getRoomByInviteCode } from '$lib/server/repositories/room.js';
-import { createParticipant, countParticipantsByRoom } from '$lib/server/repositories/participant.js';
+import { createParticipant } from '$lib/server/repositories/participant.js';
 import { parseRoomParticipants, encodeRoomParticipants } from '$lib/server/cookies.js';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -31,11 +31,6 @@ export const actions: Actions = {
 			return fail(400, { error: 'ニックネームは50文字以内で入力してください' });
 		}
 
-		const participantCount = await countParticipantsByRoom(room.id);
-		if (participantCount >= 100) {
-			return fail(400, { error: 'このルームは参加者数の上限に達しています' });
-		}
-
 		let participant;
 		try {
 			participant = await createParticipant(room.id, nickname);
@@ -48,6 +43,10 @@ export const actions: Actions = {
 			throw e;
 		}
 
+		if (!participant) {
+			return fail(400, { error: 'このルームは参加者数の上限に達しています' });
+		}
+
 		// Store room-participant mapping (delete + re-add to keep insertion order fresh)
 		const roomParticipants = parseRoomParticipants(cookies.get('room_participants'));
 		delete roomParticipants[room.id];
@@ -56,7 +55,7 @@ export const actions: Actions = {
 			path: '/',
 			httpOnly: true,
 			secure: !dev,
-			maxAge: 24 * 60 * 60,
+			maxAge: 6 * 60 * 60,
 			sameSite: 'lax'
 		});
 

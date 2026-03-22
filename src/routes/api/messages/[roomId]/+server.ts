@@ -37,12 +37,16 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
 	const rawLimit = parseInt(url.searchParams.get('limit') ?? '100', 10);
 	const limit = Math.min(Math.max(1, isNaN(rawLimit) ? 100 : rawLimit), 200);
 	const before = url.searchParams.get('before') ?? undefined;
+	const after = url.searchParams.get('after') ?? undefined;
 
 	if (before && !isValidUUID(before)) {
 		error(400, '無効なパラメータです');
 	}
+	if (after && !isValidUUID(after)) {
+		error(400, '無効なパラメータです');
+	}
 
-	const messages = await getMessagesByRoom(params.roomId, limit, before);
+	const messages = await getMessagesByRoom(params.roomId, limit, before, after);
 	return json(messages);
 };
 
@@ -71,6 +75,12 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	// Rate limiting
 	if (!messageRateLimiter.check(participantId, MESSAGE_RATE_LIMIT.maxRequests, MESSAGE_RATE_LIMIT.windowMs)) {
 		error(429, 'メッセージの送信が速すぎます。少し待ってから再度お試しください');
+	}
+
+	// Reject oversized request bodies (max 8KB for a chat message)
+	const contentLength = parseInt(request.headers.get('content-length') ?? '0', 10);
+	if (contentLength > 8192) {
+		error(413, 'リクエストが大きすぎます');
 	}
 
 	let body: Record<string, unknown>;

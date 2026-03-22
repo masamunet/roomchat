@@ -60,7 +60,7 @@ class SSEManager {
 		const infos = this.rooms.get(roomId);
 		if (!infos) return;
 
-		const data = `data: ${JSON.stringify(message)}\n\n`;
+		const data = `event: chat\ndata: ${JSON.stringify(message)}\n\n`;
 		const encoded = encoder.encode(data);
 
 		for (const info of infos) {

@@ -32,7 +32,7 @@ export async function createMessage(roomId: string, participantId: string, conte
 	return toMessage(result.rows[0]);
 }
 
-export async function getMessagesByRoom(roomId: string, limit = 100, before?: string): Promise<Message[]> {
+export async function getMessagesByRoom(roomId: string, limit = 100, before?: string, after?: string): Promise<Message[]> {
 	const db = await getDb();
 
 	let sql = `SELECT m.*, p.nickname
@@ -42,8 +42,13 @@ export async function getMessagesByRoom(roomId: string, limit = 100, before?: st
 	const params: unknown[] = [roomId];
 
 	if (before) {
-		sql += ` AND m.created_at < (SELECT created_at FROM messages WHERE id = $2)`;
 		params.push(before);
+		sql += ` AND m.created_at < (SELECT created_at FROM messages WHERE id = $${params.length})`;
+	}
+
+	if (after) {
+		params.push(after);
+		sql += ` AND m.created_at > (SELECT created_at FROM messages WHERE id = $${params.length})`;
 	}
 
 	// Fetch the most recent N messages using DESC, then reverse for chronological order

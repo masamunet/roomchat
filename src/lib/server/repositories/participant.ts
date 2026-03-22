@@ -19,25 +19,16 @@ function toParticipant(row: ParticipantRow): Participant {
 	};
 }
 
-export async function createParticipant(roomId: string, nickname: string): Promise<Participant> {
+export async function createParticipant(roomId: string, nickname: string, maxParticipants = 100): Promise<Participant | null> {
 	const db = await getDb();
 	const result = await db.query<ParticipantRow>(
 		`INSERT INTO participants (room_id, nickname)
-		 VALUES ($1, $2)
+		 SELECT $1, $2
+		 WHERE (SELECT count(*) FROM participants WHERE room_id = $1) < $3
 		 RETURNING *`,
-		[roomId, nickname]
+		[roomId, nickname, maxParticipants]
 	);
-	return toParticipant(result.rows[0]);
-}
-
-export async function isNicknameTaken(roomId: string, nickname: string): Promise<boolean> {
-	const db = await getDb();
-	const result = await db.query<{ count: string }>(
-		`SELECT count(*)::text as count FROM participants
-		 WHERE room_id = $1 AND nickname = $2`,
-		[roomId, nickname]
-	);
-	return parseInt(result.rows[0].count, 10) > 0;
+	return result.rows.length > 0 ? toParticipant(result.rows[0]) : null;
 }
 
 export async function getParticipantById(participantId: string): Promise<Participant | null> {
@@ -67,10 +58,3 @@ export async function getParticipantsByRoom(roomId: string): Promise<Participant
 	return result.rows.map(toParticipant);
 }
 
-export async function updateLastSeen(participantId: string): Promise<void> {
-	const db = await getDb();
-	await db.query(
-		`UPDATE participants SET last_seen_at = NOW() WHERE id = $1`,
-		[participantId]
-	);
-}
