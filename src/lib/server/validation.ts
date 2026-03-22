@@ -4,7 +4,7 @@ export function isValidUUID(value: string): boolean {
 	return UUID_RE.test(value);
 }
 
-const INVITE_CODE_RE = /^[A-HJ-NP-Z2-9]{8}$/;
+const INVITE_CODE_RE = /^[A-HJ-NP-Z2-9]{8,12}$/;
 
 export function isValidInviteCode(value: string): boolean {
 	return INVITE_CODE_RE.test(value);

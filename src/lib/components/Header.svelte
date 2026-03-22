@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { tick } from 'svelte';
+
 	type Props = {
 		user: {
 			id: string;
@@ -10,9 +12,56 @@
 
 	let { user }: Props = $props();
 	let menuOpen = $state(false);
+	let triggerButton = $state<HTMLButtonElement | null>(null);
+	let menuContainer = $state<HTMLDivElement | null>(null);
+
+	function closeMenu() {
+		menuOpen = false;
+		triggerButton?.focus();
+	}
+
+	function handleMenuKeydown(e: KeyboardEvent) {
+		if (!menuOpen) return;
+
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			closeMenu();
+			return;
+		}
+
+		if (e.key === 'Tab') {
+			// Focus trap: cycle within the menu
+			const focusable = menuContainer?.querySelectorAll<HTMLElement>(
+				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+			);
+			if (!focusable || focusable.length === 0) return;
+
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		}
+	}
+
+	async function toggleMenu() {
+		menuOpen = !menuOpen;
+		if (menuOpen) {
+			await tick();
+			const firstFocusable = menuContainer?.querySelector<HTMLElement>(
+				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+			);
+			firstFocusable?.focus();
+		}
+	}
 </script>
 
-<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && menuOpen) menuOpen = false; }} />
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && menuOpen) closeMenu(); }} />
 
 <header class="bg-white border-b border-gray-200 px-4 py-3">
 	<div class="max-w-4xl mx-auto flex items-center justify-between">
@@ -28,7 +77,10 @@
 
 				<div class="relative">
 					<button
-						onclick={() => menuOpen = !menuOpen}
+						bind:this={triggerButton}
+						onclick={toggleMenu}
+						aria-expanded={menuOpen}
+						aria-haspopup="true"
 						class="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-gray-300"
 					>
 						{#if user.avatarUrl}
@@ -44,16 +96,23 @@
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="fixed inset-0 z-10"
-							onclick={() => menuOpen = false}
+							onclick={closeMenu}
 							onkeydown={() => {}}
 						></div>
-						<div class="absolute right-0 top-10 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-48">
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							bind:this={menuContainer}
+							onkeydown={handleMenuKeydown}
+							role="menu"
+							tabindex="-1"
+							class="absolute right-0 top-10 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-48"
+						>
 							<div class="px-4 py-2 border-b border-gray-100">
 								<p class="text-sm font-medium text-gray-900">{user.name ?? 'ユーザー'}</p>
 								<p class="text-xs text-gray-500">{user.email}</p>
 							</div>
 							<form method="POST" action="/auth/logout">
-								<button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
+								<button type="submit" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
 									ログアウト
 								</button>
 							</form>

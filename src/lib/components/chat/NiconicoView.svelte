@@ -9,6 +9,7 @@
 
 	let { messages, currentParticipantId }: Props = $props();
 	let container: HTMLDivElement;
+	let liveRegion: HTMLDivElement;
 	let processedCount = $state(0);
 	let mounted = $state(false);
 	let activeElements: HTMLDivElement[] = [];
@@ -46,8 +47,17 @@
 	function spawnComment(msg: Message) {
 		if (!container) return;
 
+		// Announce to screen readers
+		if (liveRegion) {
+			const announcement = document.createElement('p');
+			announcement.textContent = `${msg.nickname}: ${msg.content}`;
+			liveRegion.appendChild(announcement);
+			setTimeout(() => announcement.remove(), 10_000);
+		}
+
 		const el = document.createElement('div');
 		el.className = 'niconico-comment';
+		el.setAttribute('aria-hidden', 'true');
 		el.textContent = `${msg.nickname}: ${msg.content}`;
 
 		// Random vertical position (5% - 85%)
@@ -82,13 +92,14 @@
 	}
 </script>
 
-<div bind:this={container} class="flex-1 relative overflow-hidden bg-gray-900">
+<div bind:this={container} class="flex-1 relative overflow-hidden bg-gray-900" role="log" aria-label="チャットメッセージ">
 	{#if messages.length === 0}
 		<div class="flex items-center justify-center h-full">
 			<p class="text-gray-500 text-sm">メッセージを送信するとコメントが流れます</p>
 		</div>
 	{/if}
 </div>
+<div bind:this={liveRegion} aria-live="polite" class="sr-only"></div>
 
 <style>
 	:global(.niconico-comment) {

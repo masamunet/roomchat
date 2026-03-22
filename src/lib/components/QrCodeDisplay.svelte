@@ -28,4 +28,4 @@
 	});
 </script>
 
-<canvas bind:this={canvas} class="rounded-lg"></canvas>
+<canvas bind:this={canvas} class="rounded-lg" aria-label="招待URL {value} のQRコード">招待URL {value} のQRコード</canvas>

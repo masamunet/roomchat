@@ -1,7 +1,16 @@
 import pg from 'pg';
+import { env } from '$env/dynamic/private';
 import type { DbClient } from './index.js';
 
 let pool: pg.Pool | null = null;
+
+function buildSslConfig(): pg.PoolConfig['ssl'] {
+	const sslMode = env.DB_SSL_MODE ?? 'prefer';
+	if (sslMode === 'disable') return false;
+	return {
+		rejectUnauthorized: sslMode !== 'no-verify'
+	};
+}
 
 export async function createPostgresClient(connectionString: string): Promise<DbClient> {
 	if (!pool) {
@@ -9,7 +18,8 @@ export async function createPostgresClient(connectionString: string): Promise<Db
 			connectionString,
 			max: 10,
 			idleTimeoutMillis: 30_000,
-			connectionTimeoutMillis: 5_000
+			connectionTimeoutMillis: 5_000,
+			ssl: buildSslConfig()
 		});
 
 		// Graceful shutdown (registered once with pool creation)

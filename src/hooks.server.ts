@@ -27,8 +27,9 @@ async function cleanExpiredSessions() {
 export const handle: Handle = async ({ event, resolve }) => {
 	await initializeDb();
 
-	// CSRF protection for non-GET API requests
-	if (event.url.pathname.startsWith('/api/') && event.request.method !== 'GET') {
+	// CSRF protection for all non-GET/HEAD/OPTIONS requests
+	const unsafeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+	if (unsafeMethods.includes(event.request.method)) {
 		const origin = event.request.headers.get('origin');
 		if (!origin || origin !== event.url.origin) {
 			return new Response(JSON.stringify({ message: '不正なリクエストです' }), {
@@ -76,15 +77,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const response = await resolve(event);
 
-	// Security headers
+	// Security headers (CSP is handled by SvelteKit's built-in csp config)
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-	response.headers.set(
-		'Content-Security-Policy',
-		"default-src 'self'; img-src 'self' https://*.googleusercontent.com data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'"
-	);
 
 	return response;
 };
