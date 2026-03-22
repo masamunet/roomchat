@@ -86,7 +86,7 @@
 	}
 </script>
 
-<div bind:this={container} class="flex-1 relative overflow-hidden bg-gray-900">
+<div bind:this={container} class="flex-1 relative overflow-hidden bg-gray-900" aria-live="polite" aria-label="チャットメッセージ">
 	{#if messages.length === 0}
 		<div class="flex items-center justify-center h-full">
 			<p class="text-gray-500 text-sm">メッセージを送信するとコメントが流れます</p>

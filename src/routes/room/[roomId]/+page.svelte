@@ -142,7 +142,7 @@
 
 	<!-- Error Toast -->
 	{#if sendError}
-		<div class="px-4 py-2 bg-red-50 border-t border-red-200">
+		<div class="px-4 py-2 bg-red-50 border-t border-red-200" role="alert">
 			<p class="text-sm text-red-600 text-center">{sendError}</p>
 		</div>
 	{/if}

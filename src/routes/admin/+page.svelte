@@ -27,6 +27,8 @@
 					placeholder="ルーム名を入力"
 					required
 					maxlength="100"
+					aria-label="ルーム名"
+					aria-describedby={form?.error && form?.action === 'create' ? 'room-create-error' : undefined}
 					class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 				/>
 				<button
@@ -36,8 +38,8 @@
 					作成
 				</button>
 			</div>
-			{#if form?.error && form?.action === 'create'}
-				<p class="mt-2 text-sm text-red-600">{form.error}</p>
+		{#if form?.error && form?.action === 'create'}
+				<p id="room-create-error" class="mt-2 text-sm text-red-600" role="alert">{form.error}</p>
 			{/if}
 		</div>
 	</form>

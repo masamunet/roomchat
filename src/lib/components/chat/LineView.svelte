@@ -24,7 +24,7 @@
 	});
 </script>
 
-<div bind:this={scrollContainer} class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#8CABD9]">
+<div bind:this={scrollContainer} class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#8CABD9]" aria-live="polite" aria-label="チャットメッセージ">
 	{#each messages as msg (msg.id)}
 		{@const isMine = msg.participantId === currentParticipantId}
 		<div class="flex" class:flex-row-reverse={isMine}>
@@ -50,7 +50,7 @@
 					>
 						{msg.content}
 					</div>
-					<span class="text-[10px] text-white/70 flex-shrink-0">
+					<span class="text-[10px] text-white/90 flex-shrink-0">
 						{format(new Date(msg.createdAt), 'HH:mm')}
 					</span>
 				</div>

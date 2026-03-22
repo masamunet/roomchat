@@ -24,7 +24,7 @@
 	});
 </script>
 
-<div bind:this={scrollContainer} class="flex-1 overflow-y-auto p-4 space-y-4">
+<div bind:this={scrollContainer} class="flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite" aria-label="チャットメッセージ">
 	{#each messages as msg (msg.id)}
 		<div class="flex gap-3">
 			<div class="flex-shrink-0 w-8 h-8 rounded bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600">
