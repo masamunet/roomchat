@@ -1,12 +1,14 @@
 <script lang="ts">
 	type Props = {
 		onSend: (content: string) => void;
+		disabled?: boolean;
 	};
 
-	let { onSend }: Props = $props();
+	let { onSend, disabled = false }: Props = $props();
 	let content = $state('');
 	let showEmojiPicker = $state(false);
 	let inputEl: HTMLTextAreaElement;
+	const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent);
 
 	const EMOJI_CATEGORIES = [
 		{ name: '顔', emojis: ['😀','😂','🥹','😍','🤔','😎','😢','😤','🥳','😱','🤣','😊','🥰','😏','🤗','😴','🤮','😈','👻','💀'] },
@@ -17,7 +19,7 @@
 
 	function handleSubmit() {
 		const trimmed = content.trim();
-		if (!trimmed) return;
+		if (!trimmed || disabled) return;
 		onSend(trimmed);
 		content = '';
 		showEmojiPicker = false;
@@ -30,7 +32,7 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter' && !e.shiftKey) {
+		if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
 			e.preventDefault();
 			handleSubmit();
 		}
@@ -76,14 +78,14 @@
 				bind:this={inputEl}
 				bind:value={content}
 				onkeydown={handleKeydown}
-				placeholder="メッセージを入力..."
+				placeholder={`メッセージを入力... (${isMac ? 'Cmd' : 'Ctrl'}+Enterで送信)`}
 				rows="1"
 				class="w-full px-4 py-2.5 pr-11 border border-gray-300 rounded-2xl resize-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32"
 			></textarea>
 			<button
 				type="button"
 				onclick={() => showEmojiPicker = !showEmojiPicker}
-				class="absolute right-2 bottom-1 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-lg"
+				class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-lg"
 				class:bg-blue-100={showEmojiPicker}
 				class:text-blue-600={showEmojiPicker}
 			>
@@ -93,13 +95,20 @@
 		<button
 			type="button"
 			onclick={handleSubmit}
-			disabled={!content.trim()}
-			aria-label="送信"
+			disabled={!content.trim() || disabled}
+			aria-label={disabled ? '送信中...' : '送信'}
 			class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
 		>
-			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-7 7m7-7l7 7" transform="rotate(45 12 12)"/>
-			</svg>
+			{#if disabled}
+				<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+				</svg>
+			{:else}
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-7 7m7-7l7 7" transform="rotate(45 12 12)"/>
+				</svg>
+			{/if}
 		</button>
 	</div>
 </div>

@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 
 	let { data, form } = $props();
+
+	let deleteTargetRoomId = $state<string | null>(null);
+	let deleteFormRefs: Record<string, HTMLFormElement> = {};
 </script>
 
 <svelte:head>
@@ -23,6 +27,8 @@
 					placeholder="ルーム名を入力"
 					required
 					maxlength="100"
+					aria-label="ルーム名"
+					aria-describedby={form?.error && form?.action === 'create' ? 'room-create-error' : undefined}
 					class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 				/>
 				<button
@@ -32,8 +38,8 @@
 					作成
 				</button>
 			</div>
-			{#if form?.error}
-				<p class="mt-2 text-sm text-red-600">{form.error}</p>
+		{#if form?.error && form?.action === 'create'}
+				<p id="room-create-error" class="mt-2 text-sm text-red-600" role="alert">{form.error}</p>
 			{/if}
 		</div>
 	</form>
@@ -41,6 +47,9 @@
 	<!-- Room List -->
 	<div class="space-y-3">
 		<h2 class="text-lg font-semibold text-gray-800">ルーム一覧</h2>
+		{#if form?.error && form?.action === 'delete'}
+			<p class="text-sm text-red-600">{form.error}</p>
+		{/if}
 		{#if data.rooms.length === 0}
 			<p class="text-gray-500 text-sm py-8 text-center">ルームがありません</p>
 		{:else}
@@ -66,12 +75,12 @@
 						>
 							詳細
 						</a>
-						<form method="POST" action="?/delete" use:enhance>
+						<form method="POST" action="?/delete" use:enhance bind:this={deleteFormRefs[room.id]}>
 							<input type="hidden" name="roomId" value={room.id} />
 							<button
-								type="submit"
+								type="button"
 								class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg"
-								onclick={(e) => { if (!confirm('このルームを削除しますか？')) e.preventDefault(); }}
+								onclick={() => { deleteTargetRoomId = room.id; }}
 							>
 								削除
 							</button>
@@ -82,3 +91,18 @@
 		{/if}
 	</div>
 </div>
+
+<ConfirmDialog
+	open={deleteTargetRoomId !== null}
+	title="ルームの削除"
+	message="このルームを削除しますか？この操作は取り消せません。"
+	confirmLabel="削除"
+	cancelLabel="キャンセル"
+	onConfirm={() => {
+		if (deleteTargetRoomId && deleteFormRefs[deleteTargetRoomId]) {
+			deleteFormRefs[deleteTargetRoomId].requestSubmit();
+		}
+		deleteTargetRoomId = null;
+	}}
+	onCancel={() => { deleteTargetRoomId = null; }}
+/>

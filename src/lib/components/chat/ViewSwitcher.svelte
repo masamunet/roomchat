@@ -15,10 +15,11 @@
 	];
 </script>
 
-<div class="flex bg-gray-100 rounded-lg p-0.5">
+<div class="flex bg-gray-100 rounded-lg p-0.5" role="group" aria-label="チャット表示モード">
 	{#each modes as mode}
 		<button
 			type="button"
+			aria-pressed={current === mode.value}
 			onclick={() => onChange(mode.value)}
 			class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
 			class:bg-white={current === mode.value}

@@ -58,6 +58,16 @@ g[globalKey] = messageRateLimiter;
 
 export const MESSAGE_RATE_LIMIT = { maxRequests: 10, windowMs: 10_000 };
 
+// 5 join attempts per 60 seconds per IP
+const joinGlobalKey = '__roomchat_join_rate_limiter__';
+if (g[joinGlobalKey]) {
+	(g[joinGlobalKey] as RateLimiter).destroy();
+}
+export const joinRateLimiter = new RateLimiter();
+g[joinGlobalKey] = joinRateLimiter;
+
+export const JOIN_RATE_LIMIT = { maxRequests: 5, windowMs: 60_000 };
+
 // 3 nickname changes per 60 seconds per participant
 const nicknameGlobalKey = '__roomchat_nickname_rate_limiter__';
 if (g[nicknameGlobalKey]) {

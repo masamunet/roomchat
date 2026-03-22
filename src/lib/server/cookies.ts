@@ -1,10 +1,20 @@
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
+let generatedDevSecret: string | null = null;
+
 function getSecret(): string {
 	if (env.COOKIE_SECRET) return env.COOKIE_SECRET;
-	if (dev) return 'roomchat-dev-secret-change-in-production';
+	if (dev) {
+		if (!generatedDevSecret) {
+			generatedDevSecret = randomBytes(32).toString('hex');
+			console.warn(
+				'[WARN] COOKIE_SECRET is not set. Using a random secret for this dev session. Set COOKIE_SECRET in .env for persistent sessions.'
+			);
+		}
+		return generatedDevSecret;
+	}
 	throw new Error('COOKIE_SECRET must be set in production');
 }
 

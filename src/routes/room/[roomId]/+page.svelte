@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import ChatInput from '$lib/components/ChatInput.svelte';
 	import QrOverlay from '$lib/components/QrOverlay.svelte';
 	import SlackView from '$lib/components/chat/SlackView.svelte';
@@ -23,6 +24,8 @@
 	let viewMode = $state<ChatViewMode>('slack');
 	let showQrOverlay = $state(false);
 	let sendError = $state('');
+	let sending = $state(false);
+	let connectionStatus = $state<'connecting' | 'connected' | 'reconnecting'>('connecting');
 	let eventSource: EventSource | null = null;
 	let fetchMissedTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -55,6 +58,9 @@
 
 		// Connect SSE
 		eventSource = new EventSource(`/api/sse/${data.room.id}`);
+		eventSource.onopen = () => {
+			connectionStatus = 'connected';
+		};
 		eventSource.addEventListener('nickname_changed', (event) => {
 			let payload;
 			try {
@@ -80,6 +86,7 @@
 			}
 		});
 		eventSource.onerror = () => {
+			connectionStatus = 'reconnecting';
 			// Debounce: clear previous timer to avoid burst of fetches
 			if (fetchMissedTimer) clearTimeout(fetchMissedTimer);
 			fetchMissedTimer = setTimeout(async () => {
@@ -168,7 +175,9 @@
 	}
 
 	async function sendMessage(content: string) {
+		if (sending) return;
 		sendError = '';
+		sending = true;
 		try {
 			const res = await fetch(`/api/messages/${data.room.id}`, {
 				method: 'POST',
@@ -177,9 +186,17 @@
 			});
 
 			if (!res.ok) {
-				const err = await res.json().catch(() => ({ message: '送信に失敗しました' }));
-				sendError = err.message || '送信に失敗しました';
-				setTimeout(() => sendError = '', 3000);
+				const err = await res.json().catch(() => null);
+				if (res.status === 429) {
+					sendError = err?.message || 'メッセージの送信が速すぎます。少し待ってからお試しください';
+				} else if (res.status === 401 || res.status === 403) {
+					sendError = err?.message || 'ルームへの参加が必要です。ページを再読み込みしてください';
+				} else if (res.status >= 500) {
+					sendError = 'サーバーエラーが発生しました。しばらくしてからお試しください';
+				} else {
+					sendError = err?.message || '送信に失敗しました';
+				}
+				setTimeout(() => sendError = '', 5000);
 				return;
 			}
 
@@ -192,6 +209,8 @@
 		} catch {
 			sendError = 'ネットワークエラー。再度お試しください';
 			setTimeout(() => sendError = '', 3000);
+		} finally {
+			sending = false;
 		}
 	}
 </script>
@@ -264,24 +283,35 @@
 		</div>
 	</div>
 
-	<!-- Chat View -->
-	{#if viewMode === 'slack'}
-		<SlackView messages={allMessages} currentParticipantId={data.participant.id} />
-	{:else if viewMode === 'line'}
-		<LineView messages={allMessages} currentParticipantId={data.participant.id} />
-	{:else}
-		<NiconicoView messages={allMessages} currentParticipantId={data.participant.id} />
+	<!-- Connection Status -->
+	{#if connectionStatus !== 'connected'}
+		<div class="px-4 py-1.5 text-xs text-center" class:bg-yellow-50={connectionStatus === 'connecting'} class:text-yellow-700={connectionStatus === 'connecting'} class:bg-orange-50={connectionStatus === 'reconnecting'} class:text-orange-700={connectionStatus === 'reconnecting'}>
+			{connectionStatus === 'connecting' ? '接続中...' : '再接続中...'}
+		</div>
 	{/if}
+
+	<!-- Chat View -->
+	{#key viewMode}
+		<div class="flex-1 flex flex-col min-h-0" transition:fade={{ duration: 150 }}>
+			{#if viewMode === 'slack'}
+				<SlackView messages={allMessages} currentParticipantId={data.participant.id} />
+			{:else if viewMode === 'line'}
+				<LineView messages={allMessages} currentParticipantId={data.participant.id} />
+			{:else}
+				<NiconicoView messages={allMessages} currentParticipantId={data.participant.id} />
+			{/if}
+		</div>
+	{/key}
 
 	<!-- Error Toast -->
 	{#if sendError}
-		<div class="px-4 py-2 bg-red-50 border-t border-red-200">
+		<div class="px-4 py-2 bg-red-50 border-t border-red-200" role="alert">
 			<p class="text-sm text-red-600 text-center">{sendError}</p>
 		</div>
 	{/if}
 
 	<!-- Input -->
-	<ChatInput onSend={sendMessage} />
+	<ChatInput onSend={sendMessage} disabled={sending} />
 </div>
 
 {#if showQrOverlay && data.joinUrl}

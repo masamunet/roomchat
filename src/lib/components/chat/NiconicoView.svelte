@@ -9,13 +9,16 @@
 
 	let { messages, currentParticipantId }: Props = $props();
 	let container: HTMLDivElement;
+	let liveRegion: HTMLDivElement;
 	let processedCount = $state(0);
 	let mounted = $state(false);
 	let activeElements: HTMLDivElement[] = [];
 	let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
 
 	onMount(() => {
-		// Skip initial messages — only animate new ones arriving via SSE
+		// Skip initial messages — only animate new ones arriving via SSE.
+		// On re-mount (e.g. view mode switch via {#key}), this also prevents
+		// replaying all existing messages as animations.
 		processedCount = messages.length;
 		mounted = true;
 	});
@@ -29,6 +32,10 @@
 			el.remove();
 		}
 		activeElements = [];
+		// Clean up liveRegion announcements
+		if (liveRegion) {
+			liveRegion.textContent = '';
+		}
 	});
 
 	// Track which messages have already been animated
@@ -46,12 +53,29 @@
 	function spawnComment(msg: Message) {
 		if (!container) return;
 
+		// Announce to screen readers (cap at 20 nodes to prevent DOM bloat)
+		if (liveRegion) {
+			const announcement = document.createElement('p');
+			announcement.textContent = `${msg.nickname}: ${msg.content}`;
+			liveRegion.appendChild(announcement);
+			while (liveRegion.childNodes.length > 20) {
+				liveRegion.firstChild?.remove();
+			}
+			// Timer not tracked in activeTimeouts — onDestroy clears liveRegion.textContent
+			setTimeout(() => announcement.remove(), 10_000);
+		}
+
 		const el = document.createElement('div');
 		el.className = 'niconico-comment';
-		el.textContent = `${msg.nickname}: ${msg.content}`;
+		el.setAttribute('aria-hidden', 'true');
+		const lines = msg.content.split('\n');
+		const displayContent = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '...' : '');
+		el.textContent = `${msg.nickname}: ${displayContent}`;
 
-		// Random vertical position (5% - 85%)
-		const top = 5 + Math.random() * 80;
+		// Random vertical position — adjust upper bound for multi-line comments
+		const lineCount = Math.min(lines.length, 3);
+		const maxTop = 85 - (lineCount - 1) * 8;
+		const top = 5 + Math.random() * Math.max(maxTop - 5, 10);
 		el.style.top = `${top}%`;
 
 		// Random duration (5-8 seconds)
@@ -82,19 +106,20 @@
 	}
 </script>
 
-<div bind:this={container} class="flex-1 relative overflow-hidden bg-gray-900">
+<div bind:this={container} class="flex-1 relative overflow-hidden bg-gray-900" role="log" aria-label="チャットメッセージ">
 	{#if messages.length === 0}
 		<div class="flex items-center justify-center h-full">
 			<p class="text-gray-500 text-sm">メッセージを送信するとコメントが流れます</p>
 		</div>
 	{/if}
 </div>
+<div bind:this={liveRegion} aria-live="polite" class="sr-only"></div>
 
 <style>
 	:global(.niconico-comment) {
 		position: absolute;
 		left: 100%;
-		white-space: nowrap;
+		white-space: pre;
 		font-size: 1.25rem;
 		font-weight: bold;
 		color: white;

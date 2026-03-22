@@ -34,10 +34,12 @@
 					bind:value={inviteCode}
 					placeholder="招待コードを入力"
 					maxlength="8"
+					aria-label="招待コード"
+					aria-describedby={error ? 'invite-code-error' : undefined}
 					class="w-full px-4 py-3 text-center text-xl font-mono tracking-widest border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
 				/>
 				{#if error}
-					<p class="text-sm text-red-600 mt-1 text-center">{error}</p>
+					<p id="invite-code-error" class="text-sm text-red-600 mt-1 text-center" role="alert">{error}</p>
 				{/if}
 			</div>
 			<button
