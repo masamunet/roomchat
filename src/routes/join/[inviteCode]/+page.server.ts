@@ -1,12 +1,12 @@
 import { redirect, fail, error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 import { getRoomByInviteCode } from '$lib/server/repositories/room.js';
-import { createParticipant } from '$lib/server/repositories/participant.js';
+import { createParticipant, getParticipantById } from '$lib/server/repositories/participant.js';
 import { parseRoomParticipants, encodeRoomParticipants } from '$lib/server/cookies.js';
 import { isValidInviteCode } from '$lib/server/validation.js';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, cookies }) => {
 	const code = params.inviteCode.toUpperCase();
 	if (!isValidInviteCode(code)) {
 		error(400, '無効な招待コードです');
@@ -15,6 +15,17 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (!room) {
 		error(404, 'ルームが見つかりません。招待コードを確認してください。');
 	}
+
+	// 既にCookieに有効な参加者情報がある場合、ルームに直接リダイレクト
+	const roomParticipants = parseRoomParticipants(cookies.get('room_participants'));
+	const participantId = roomParticipants[room.id];
+	if (participantId) {
+		const participant = await getParticipantById(participantId);
+		if (participant && participant.roomId === room.id) {
+			redirect(302, `/room/${room.id}`);
+		}
+	}
+
 	return { room };
 };
 

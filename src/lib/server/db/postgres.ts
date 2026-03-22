@@ -5,11 +5,17 @@ let pool: pg.Pool | null = null;
 
 export async function createPostgresClient(connectionString: string): Promise<DbClient> {
 	if (!pool) {
+		const isRemoteDb = !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1');
 		pool = new pg.Pool({
 			connectionString,
 			max: 10,
 			idleTimeoutMillis: 30_000,
-			connectionTimeoutMillis: 5_000
+			connectionTimeoutMillis: 5_000,
+			ssl: isRemoteDb ? { rejectUnauthorized: false } : false
+		});
+
+		pool.on('error', (err) => {
+			console.error('Unexpected pool error:', err);
 		});
 
 		// Graceful shutdown (registered once with pool creation)
