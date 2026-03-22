@@ -33,6 +33,12 @@ export const PATCH: RequestHandler = async ({ params, request, cookies }) => {
 		error(429, 'ニックネームの変更が速すぎます。少し待ってからお試しください');
 	}
 
+	// Reject oversized request bodies
+	const contentLength = parseInt(request.headers.get('content-length') ?? '0', 10);
+	if (contentLength > 1024) {
+		error(413, 'リクエストが大きすぎます');
+	}
+
 	let body: Record<string, unknown>;
 	try {
 		body = await request.json();
