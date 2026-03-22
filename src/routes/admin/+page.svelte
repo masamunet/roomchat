@@ -32,7 +32,7 @@
 					作成
 				</button>
 			</div>
-			{#if form?.error}
+			{#if form?.error && form?.action === 'create'}
 				<p class="mt-2 text-sm text-red-600">{form.error}</p>
 			{/if}
 		</div>
@@ -41,7 +41,7 @@
 	<!-- Room List -->
 	<div class="space-y-3">
 		<h2 class="text-lg font-semibold text-gray-800">ルーム一覧</h2>
-		{#if form?.error}
+		{#if form?.error && form?.action === 'delete'}
 			<p class="text-sm text-red-600">{form.error}</p>
 		{/if}
 		{#if data.rooms.length === 0}
