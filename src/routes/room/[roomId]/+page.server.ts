@@ -39,17 +39,14 @@ export const load: PageServerLoad = async ({ params, cookies, locals, url }) => 
 	// Check if current user is the room creator
 	const isCreator = locals.user?.id === room.creatorId;
 
-	let joinUrl: string | null = null;
-	if (isCreator) {
-		let origin = url.origin;
-		if (dev) {
-			const localIp = getLocalIpAddress();
-			if (localIp) {
-				origin = `${url.protocol}//${localIp}:${url.port}`;
-			}
+	let origin = url.origin;
+	if (dev) {
+		const localIp = getLocalIpAddress();
+		if (localIp) {
+			origin = `${url.protocol}//${localIp}:${url.port}`;
 		}
-		joinUrl = `${origin}/join/${room.inviteCode}`;
 	}
+	const joinUrl = `${origin}/join/${room.inviteCode}`;
 
 	return {
 		room,
