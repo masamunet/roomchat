@@ -3,6 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import ChatInput from '$lib/components/ChatInput.svelte';
 	import QrOverlay from '$lib/components/QrOverlay.svelte';
+	import QrCodeDisplay from '$lib/components/QrCodeDisplay.svelte';
 	import SlackView from '$lib/components/chat/SlackView.svelte';
 	import LineView from '$lib/components/chat/LineView.svelte';
 	import NiconicoView from '$lib/components/chat/NiconicoView.svelte';
@@ -219,58 +220,60 @@
 	<title>{data.room.name} - RoomChat</title>
 </svelte:head>
 
-<div class="flex flex-col h-[calc(100dvh-60px)]">
-	<!-- Room Header -->
-	<div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
-		<div class="min-w-0">
-			<h1 class="text-base font-semibold text-gray-900 truncate">{data.room.name}</h1>
-			{#if editingNickname}
-				<div class="flex items-center gap-1 mt-0.5">
-					<input
-						type="text"
-						bind:value={nicknameInput}
-						use:autofocus
-						maxlength={50}
-						class="text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
-						onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') cancelEditNickname(); }}
-						disabled={nicknameSaving}
-					/>
-					<button
-						type="button"
-						onclick={saveNickname}
-						disabled={nicknameSaving}
-						class="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
-					>保存</button>
-					<button
-						type="button"
-						onclick={cancelEditNickname}
-						disabled={nicknameSaving}
-						class="text-xs text-gray-500 hover:text-gray-700"
-					>取消</button>
-				</div>
-				{#if nicknameError}
-					<p class="text-xs text-red-500 mt-0.5">{nicknameError}</p>
-				{/if}
-			{:else}
-				<p class="text-xs text-gray-500">
-					{currentNickname}として参加中
-					{#if canEditNickname}
+<div class="flex h-[calc(100dvh-60px)]">
+	<!-- Main Chat Area -->
+	<div class="flex flex-col flex-1 min-w-0">
+		<!-- Room Header -->
+		<div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+			<div class="min-w-0">
+				<h1 class="text-base font-semibold text-gray-900 truncate">{data.room.name}</h1>
+				{#if editingNickname}
+					<div class="flex items-center gap-1 mt-0.5">
+						<input
+							type="text"
+							bind:value={nicknameInput}
+							use:autofocus
+							maxlength={50}
+							class="text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
+							onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') cancelEditNickname(); }}
+							disabled={nicknameSaving}
+						/>
 						<button
 							type="button"
-							onclick={startEditNickname}
-							class="ml-1 text-blue-500 hover:text-blue-700 hover:underline"
-							title="ニックネームを変更（入室後5分以内）"
-						>変更</button>
+							onclick={saveNickname}
+							disabled={nicknameSaving}
+							class="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
+						>保存</button>
+						<button
+							type="button"
+							onclick={cancelEditNickname}
+							disabled={nicknameSaving}
+							class="text-xs text-gray-500 hover:text-gray-700"
+						>取消</button>
+					</div>
+					{#if nicknameError}
+						<p class="text-xs text-red-500 mt-0.5">{nicknameError}</p>
 					{/if}
-				</p>
-			{/if}
-		</div>
-		<div class="flex items-center gap-2">
-			{#if data.isCreator}
+				{:else}
+					<p class="text-xs text-gray-500">
+						{currentNickname}として参加中
+						{#if canEditNickname}
+							<button
+								type="button"
+								onclick={startEditNickname}
+								class="ml-1 text-blue-500 hover:text-blue-700 hover:underline"
+								title="ニックネームを変更（入室後5分以内）"
+							>変更</button>
+						{/if}
+					</p>
+				{/if}
+			</div>
+			<div class="flex items-center gap-2">
+				<!-- QR button: mobile only (sidebar shown on desktop) -->
 				<button
 					type="button"
 					onclick={() => showQrOverlay = true}
-					class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+					class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 lg:hidden"
 					aria-label="招待QRコードを表示"
 					title="招待QRコード"
 				>
@@ -278,40 +281,50 @@
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm14 3h.01M17 14h3v3h-3v-3zm0 4h3v3h-3v-3zm-4 0h3v3h-3v-3z"/>
 					</svg>
 				</button>
-			{/if}
-			<ViewSwitcher current={viewMode} onChange={handleViewChange} />
+				<ViewSwitcher current={viewMode} onChange={handleViewChange} />
+			</div>
 		</div>
+
+		<!-- Connection Status -->
+		{#if connectionStatus !== 'connected'}
+			<div class="px-4 py-1.5 text-xs text-center" class:bg-yellow-50={connectionStatus === 'connecting'} class:text-yellow-700={connectionStatus === 'connecting'} class:bg-orange-50={connectionStatus === 'reconnecting'} class:text-orange-700={connectionStatus === 'reconnecting'}>
+				{connectionStatus === 'connecting' ? '接続中...' : '再接続中...'}
+			</div>
+		{/if}
+
+		<!-- Chat View -->
+		{#key viewMode}
+			<div class="flex-1 flex flex-col min-h-0" transition:fade={{ duration: 150 }}>
+				{#if viewMode === 'slack'}
+					<SlackView messages={allMessages} currentParticipantId={data.participant.id} />
+				{:else if viewMode === 'line'}
+					<LineView messages={allMessages} currentParticipantId={data.participant.id} />
+				{:else}
+					<NiconicoView messages={allMessages} currentParticipantId={data.participant.id} />
+				{/if}
+			</div>
+		{/key}
+
+		<!-- Error Toast -->
+		{#if sendError}
+			<div class="px-4 py-2 bg-red-50 border-t border-red-200" role="alert">
+				<p class="text-sm text-red-600 text-center">{sendError}</p>
+			</div>
+		{/if}
+
+		<!-- Input -->
+		<ChatInput onSend={sendMessage} disabled={sending} />
 	</div>
 
-	<!-- Connection Status -->
-	{#if connectionStatus !== 'connected'}
-		<div class="px-4 py-1.5 text-xs text-center" class:bg-yellow-50={connectionStatus === 'connecting'} class:text-yellow-700={connectionStatus === 'connecting'} class:bg-orange-50={connectionStatus === 'reconnecting'} class:text-orange-700={connectionStatus === 'reconnecting'}>
-			{connectionStatus === 'connecting' ? '接続中...' : '再接続中...'}
+	<!-- QR Sidebar: desktop only -->
+	{#if data.joinUrl}
+		<div class="hidden lg:flex flex-col items-center justify-center w-64 border-l border-gray-200 bg-gray-50 shrink-0 p-4">
+			<p class="text-xs text-gray-500 mb-3">参加用QRコード</p>
+			<QrCodeDisplay value={data.joinUrl} size={180} />
+			<p class="font-mono text-sm font-bold tracking-widest text-gray-900 mt-3">{data.room.inviteCode}</p>
+			<p class="text-xs text-gray-400 break-all mt-1 text-center">{data.joinUrl}</p>
 		</div>
 	{/if}
-
-	<!-- Chat View -->
-	{#key viewMode}
-		<div class="flex-1 flex flex-col min-h-0" transition:fade={{ duration: 150 }}>
-			{#if viewMode === 'slack'}
-				<SlackView messages={allMessages} currentParticipantId={data.participant.id} />
-			{:else if viewMode === 'line'}
-				<LineView messages={allMessages} currentParticipantId={data.participant.id} />
-			{:else}
-				<NiconicoView messages={allMessages} currentParticipantId={data.participant.id} />
-			{/if}
-		</div>
-	{/key}
-
-	<!-- Error Toast -->
-	{#if sendError}
-		<div class="px-4 py-2 bg-red-50 border-t border-red-200" role="alert">
-			<p class="text-sm text-red-600 text-center">{sendError}</p>
-		</div>
-	{/if}
-
-	<!-- Input -->
-	<ChatInput onSend={sendMessage} disabled={sending} />
 </div>
 
 {#if showQrOverlay && data.joinUrl}

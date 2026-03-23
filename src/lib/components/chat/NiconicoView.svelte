@@ -16,9 +16,17 @@
 	let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
 
 	onMount(() => {
-		// Skip initial messages — only animate new ones arriving via SSE.
-		// On re-mount (e.g. view mode switch via {#key}), this also prevents
-		// replaying all existing messages as animations.
+		// Replay existing messages with staggered timing so users see past context
+		if (messages.length > 0) {
+			const replayMessages = messages.slice(-30); // Replay last 30 messages max
+			const baseDelay = 200; // ms between each message
+			for (let i = 0; i < replayMessages.length; i++) {
+				const timeoutId = setTimeout(() => {
+					spawnComment(replayMessages[i]);
+				}, i * baseDelay);
+				activeTimeouts.push(timeoutId);
+			}
+		}
 		processedCount = messages.length;
 		mounted = true;
 	});
