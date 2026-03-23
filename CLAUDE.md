@@ -21,7 +21,7 @@ RoomChat is a real-time anonymous chat application built with SvelteKit. Users c
 - **Database:** PostgreSQL (production) / PGLite (dev, embedded — used when DATABASE_URL is not set)
 - **Auth:** Google OAuth via Arctic
 - **Real-time:** Server-Sent Events (SSE) with in-memory connection manager
-- **Deployment:** Render (render.yaml)
+- **Deployment:** Railway (railway.json)
 
 ## Architecture
 
