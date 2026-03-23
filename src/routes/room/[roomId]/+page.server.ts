@@ -8,7 +8,7 @@ import { getLocalIpAddress } from '$lib/server/network.js';
 import { isValidUUID } from '$lib/server/validation.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, cookies, locals, url }) => {
+export const load: PageServerLoad = async ({ params, cookies, url }) => {
 	if (!isValidUUID(params.roomId)) {
 		error(400, '無効なルームIDです');
 	}
@@ -36,9 +36,6 @@ export const load: PageServerLoad = async ({ params, cookies, locals, url }) => 
 
 	const messages = await getMessagesByRoom(params.roomId);
 
-	// Check if current user is the room creator
-	const isCreator = locals.user?.id === room.creatorId;
-
 	let origin = url.origin;
 	if (dev) {
 		const localIp = getLocalIpAddress();
@@ -52,7 +49,6 @@ export const load: PageServerLoad = async ({ params, cookies, locals, url }) => 
 		room,
 		participant,
 		messages,
-		isCreator,
 		joinUrl
 	};
 };
