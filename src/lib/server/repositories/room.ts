@@ -7,7 +7,7 @@ interface RoomRow {
 	name: string;
 	invite_code: string;
 	creator_id: string;
-	created_at: Date;
+	created_at: string | Date;
 	is_active: boolean;
 }
 
@@ -38,8 +38,9 @@ export async function createRoom(name: string, creatorId: string): Promise<Room>
 			return toRoom(result.rows[0]);
 		} catch (e: unknown) {
 			const isUniqueViolation =
-				e instanceof Error && ('code' in e) && (e as { code: string }).code === '23505';
-			if (!isUniqueViolation || attempt === 2) throw e;
+				e instanceof Error && 'code' in e && (e as { code: string }).code === '23505';
+			if (!isUniqueViolation) throw e;
+			// Continue loop on invite code collision
 		}
 	}
 
@@ -74,59 +75,90 @@ export async function getRoomByInviteCode(inviteCode: string): Promise<Room | nu
 	return result.rows.length > 0 ? toRoom(result.rows[0]) : null;
 }
 
+/**
+ * Archive then hard-delete a single room.
+ * Uses a single CTE so the archive and delete are atomic.
+ */
 export async function deleteRoom(roomId: string): Promise<void> {
 	const db = await getDb();
-	await db.query(`DELETE FROM rooms WHERE id = $1`, [roomId]);
+
+	await db.query(
+		`WITH archive_rooms AS (
+		   INSERT INTO archived_rooms
+		     (id, name, invite_code, creator_id, creator_email, created_at, is_active, archived_at)
+		   SELECT r.id, r.name, r.invite_code, r.creator_id, u.email,
+		          r.created_at, r.is_active, NOW()
+		   FROM rooms r
+		   JOIN users u ON u.id = r.creator_id
+		   WHERE r.id = $1
+		   ON CONFLICT (id) DO NOTHING
+		 ),
+		 archive_participants AS (
+		   INSERT INTO archived_participants
+		     (id, room_id, nickname, joined_at, last_seen_at, archived_at)
+		   SELECT id, room_id, nickname, joined_at, last_seen_at, NOW()
+		   FROM participants
+		   WHERE room_id = $1
+		   ON CONFLICT (id) DO NOTHING
+		 ),
+		 archive_messages AS (
+		   INSERT INTO archived_messages
+		     (id, room_id, participant_id, nickname, content, created_at, archived_at)
+		   SELECT m.id, m.room_id, m.participant_id, p.nickname, m.content, m.created_at, NOW()
+		   FROM messages m
+		   JOIN participants p ON p.id = m.participant_id
+		   WHERE m.room_id = $1
+		   ON CONFLICT (id) DO NOTHING
+		 )
+		 DELETE FROM rooms WHERE id = $1`,
+		[roomId]
+	);
 }
 
+/**
+ * Archive then hard-delete all rooms older than 6 hours.
+ * Uses a single CTE so the archive and delete are atomic — no TOCTOU window.
+ * Returns the IDs of deleted rooms.
+ */
 export async function deleteExpiredRooms(): Promise<string[]> {
 	const db = await getDb();
 
-	// Find expired room IDs
-	const expired = await db.query<{ id: string }>(
-		`SELECT id FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours'`
-	);
-	if (expired.rows.length === 0) return [];
-
-	const expiredIds = expired.rows.map((r) => r.id);
-	const placeholders = expiredIds.map((_, i) => `$${i + 1}`).join(', ');
-
-	// Archive rooms
-	await db.query(
-		`INSERT INTO archived_rooms (id, name, invite_code, creator_id, created_at, is_active, archived_at)
-		 SELECT id, name, invite_code, creator_id, created_at, is_active, NOW()
-		 FROM rooms WHERE id IN (${placeholders})
-		 ON CONFLICT (id) DO NOTHING`,
-		expiredIds
-	);
-
-	// Archive participants
-	await db.query(
-		`INSERT INTO archived_participants (id, room_id, nickname, joined_at, last_seen_at, archived_at)
-		 SELECT id, room_id, nickname, joined_at, last_seen_at, NOW()
-		 FROM participants WHERE room_id IN (${placeholders})
-		 ON CONFLICT (id) DO NOTHING`,
-		expiredIds
-	);
-
-	// Archive messages with nickname
-	await db.query(
-		`INSERT INTO archived_messages (id, room_id, participant_id, nickname, content, created_at, archived_at)
-		 SELECT m.id, m.room_id, m.participant_id, p.nickname, m.content, m.created_at, NOW()
-		 FROM messages m
-		 JOIN participants p ON p.id = m.participant_id
-		 WHERE m.room_id IN (${placeholders})
-		 ON CONFLICT (id) DO NOTHING`,
-		expiredIds
+	const result = await db.query<{ id: string }>(
+		`WITH expired AS (
+		   SELECT id FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours'
+		 ),
+		 archive_rooms AS (
+		   INSERT INTO archived_rooms
+		     (id, name, invite_code, creator_id, creator_email, created_at, is_active, archived_at)
+		   SELECT r.id, r.name, r.invite_code, r.creator_id, u.email,
+		          r.created_at, r.is_active, NOW()
+		   FROM rooms r
+		   JOIN users u ON u.id = r.creator_id
+		   WHERE r.id IN (SELECT id FROM expired)
+		   ON CONFLICT (id) DO NOTHING
+		 ),
+		 archive_participants AS (
+		   INSERT INTO archived_participants
+		     (id, room_id, nickname, joined_at, last_seen_at, archived_at)
+		   SELECT id, room_id, nickname, joined_at, last_seen_at, NOW()
+		   FROM participants
+		   WHERE room_id IN (SELECT id FROM expired)
+		   ON CONFLICT (id) DO NOTHING
+		 ),
+		 archive_messages AS (
+		   INSERT INTO archived_messages
+		     (id, room_id, participant_id, nickname, content, created_at, archived_at)
+		   SELECT m.id, m.room_id, m.participant_id, p.nickname, m.content, m.created_at, NOW()
+		   FROM messages m
+		   JOIN participants p ON p.id = m.participant_id
+		   WHERE m.room_id IN (SELECT id FROM expired)
+		   ON CONFLICT (id) DO NOTHING
+		 )
+		 DELETE FROM rooms WHERE id IN (SELECT id FROM expired)
+		 RETURNING id`
 	);
 
-	// Delete expired rooms (cascades to participants and messages)
-	await db.query(
-		`DELETE FROM rooms WHERE id IN (${placeholders})`,
-		expiredIds
-	);
-
-	return expiredIds;
+	return result.rows.map((r) => r.id);
 }
 
 export async function countActiveRoomsByCreator(creatorId: string): Promise<number> {
