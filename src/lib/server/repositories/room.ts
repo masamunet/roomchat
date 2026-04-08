@@ -2,6 +2,9 @@ import { getDb } from '$lib/server/db/index.js';
 import { generateInviteCode } from '$lib/utils/invite-code.js';
 import type { Room } from '$lib/types/index.js';
 
+/** Duration after which a room is considered expired and eligible for deletion. */
+const ROOM_EXPIRY_INTERVAL = '6 hours';
+
 interface RoomRow {
 	id: string;
 	name: string;
@@ -38,7 +41,7 @@ export async function createRoom(name: string, creatorId: string): Promise<Room>
 			return toRoom(result.rows[0]);
 		} catch (e: unknown) {
 			const isUniqueViolation =
-				e instanceof Error && 'code' in e && (e as { code: string }).code === '23505';
+				e instanceof Error && 'code' in e && (e as { code?: string }).code === '23505';
 			if (!isUniqueViolation) throw e;
 			// Continue loop on invite code collision
 		}
@@ -78,6 +81,8 @@ export async function getRoomByInviteCode(inviteCode: string): Promise<Room | nu
 /**
  * Archive then hard-delete a single room.
  * Uses a single CTE so the archive and delete are atomic.
+ * On concurrent calls for the same room, the archive INSERT is idempotent
+ * (preserves the original archived_at timestamp).
  */
 export async function deleteRoom(roomId: string): Promise<void> {
 	const db = await getDb();
@@ -91,7 +96,7 @@ export async function deleteRoom(roomId: string): Promise<void> {
 		   FROM rooms r
 		   JOIN users u ON u.id = r.creator_id
 		   WHERE r.id = $1
-		   ON CONFLICT (id) DO NOTHING
+		   ON CONFLICT (id) DO UPDATE SET archived_at = archived_rooms.archived_at
 		 ),
 		 archive_participants AS (
 		   INSERT INTO archived_participants
@@ -99,7 +104,7 @@ export async function deleteRoom(roomId: string): Promise<void> {
 		   SELECT id, room_id, nickname, joined_at, last_seen_at, NOW()
 		   FROM participants
 		   WHERE room_id = $1
-		   ON CONFLICT (id) DO NOTHING
+		   ON CONFLICT (id) DO UPDATE SET archived_at = archived_participants.archived_at
 		 ),
 		 archive_messages AS (
 		   INSERT INTO archived_messages
@@ -108,7 +113,7 @@ export async function deleteRoom(roomId: string): Promise<void> {
 		   FROM messages m
 		   JOIN participants p ON p.id = m.participant_id
 		   WHERE m.room_id = $1
-		   ON CONFLICT (id) DO NOTHING
+		   ON CONFLICT (id) DO UPDATE SET archived_at = archived_messages.archived_at
 		 )
 		 DELETE FROM rooms WHERE id = $1`,
 		[roomId]
@@ -116,8 +121,9 @@ export async function deleteRoom(roomId: string): Promise<void> {
 }
 
 /**
- * Archive then hard-delete all rooms older than 6 hours.
+ * Archive then hard-delete all rooms older than ROOM_EXPIRY_INTERVAL.
  * Uses a single CTE so the archive and delete are atomic — no TOCTOU window.
+ * On concurrent calls, archive INSERTs are idempotent (preserve original timestamps).
  * Returns the IDs of deleted rooms.
  */
 export async function deleteExpiredRooms(): Promise<string[]> {
@@ -125,7 +131,7 @@ export async function deleteExpiredRooms(): Promise<string[]> {
 
 	const result = await db.query<{ id: string }>(
 		`WITH expired AS (
-		   SELECT id FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours'
+		   SELECT id FROM rooms WHERE created_at < NOW() - INTERVAL '${ROOM_EXPIRY_INTERVAL}'
 		 ),
 		 archive_rooms AS (
 		   INSERT INTO archived_rooms
@@ -135,7 +141,7 @@ export async function deleteExpiredRooms(): Promise<string[]> {
 		   FROM rooms r
 		   JOIN users u ON u.id = r.creator_id
 		   WHERE r.id IN (SELECT id FROM expired)
-		   ON CONFLICT (id) DO NOTHING
+		   ON CONFLICT (id) DO UPDATE SET archived_at = archived_rooms.archived_at
 		 ),
 		 archive_participants AS (
 		   INSERT INTO archived_participants
@@ -143,7 +149,7 @@ export async function deleteExpiredRooms(): Promise<string[]> {
 		   SELECT id, room_id, nickname, joined_at, last_seen_at, NOW()
 		   FROM participants
 		   WHERE room_id IN (SELECT id FROM expired)
-		   ON CONFLICT (id) DO NOTHING
+		   ON CONFLICT (id) DO UPDATE SET archived_at = archived_participants.archived_at
 		 ),
 		 archive_messages AS (
 		   INSERT INTO archived_messages
@@ -152,7 +158,7 @@ export async function deleteExpiredRooms(): Promise<string[]> {
 		   FROM messages m
 		   JOIN participants p ON p.id = m.participant_id
 		   WHERE m.room_id IN (SELECT id FROM expired)
-		   ON CONFLICT (id) DO NOTHING
+		   ON CONFLICT (id) DO UPDATE SET archived_at = archived_messages.archived_at
 		 )
 		 DELETE FROM rooms WHERE id IN (SELECT id FROM expired)
 		 RETURNING id`
@@ -166,7 +172,7 @@ export async function countActiveRoomsByCreator(creatorId: string): Promise<numb
 	const result = await db.query<{ count: string }>(
 		`SELECT count(*)::text as count FROM rooms
 		 WHERE creator_id = $1 AND is_active = TRUE
-		 AND created_at > NOW() - INTERVAL '6 hours'`,
+		 AND created_at > NOW() - INTERVAL '${ROOM_EXPIRY_INTERVAL}'`,
 		[creatorId]
 	);
 	return parseInt(result.rows[0]?.count ?? '0', 10);
