@@ -2,13 +2,6 @@ import { getDb } from '$lib/server/db/index.js';
 import { generateInviteCode } from '$lib/utils/invite-code.js';
 import type { Room } from '$lib/types/index.js';
 
-/**
- * Hours after creation at which a room expires and is eligible for deletion.
- * NOTE: This constant is for TypeScript use only. The SQL queries below contain
- * the matching literal `INTERVAL '6 hours'` — if you change this value, update
- * those SQL literals too, as well as `getRemainingTime` in utils/remaining-time.ts.
- */
-export const ROOM_EXPIRY_HOURS = 6;
 
 interface RoomRow {
 	id: string;
@@ -77,7 +70,8 @@ export async function getRoomById(roomId: string): Promise<Room | null> {
 export async function getRoomByInviteCode(inviteCode: string): Promise<Room | null> {
 	const db = await getDb();
 	const result = await db.query<RoomRow>(
-		`SELECT * FROM rooms WHERE invite_code = $1 AND is_active = TRUE`,
+		`SELECT * FROM rooms WHERE invite_code = $1 AND is_active = TRUE
+		 AND created_at > NOW() - INTERVAL '6 hours'`,
 		[inviteCode]
 	);
 	return result.rows.length > 0 ? toRoom(result.rows[0]) : null;
@@ -97,10 +91,11 @@ export async function deleteRoom(roomId: string): Promise<void> {
 		`WITH archive_rooms AS (
 		   INSERT INTO archived_rooms
 		     (id, name, invite_code, creator_id, creator_email, created_at, is_active, archived_at)
-		   SELECT r.id, r.name, r.invite_code, r.creator_id, u.email,
+		   -- COALESCE handles the rare case where the creator account was deleted
+		   SELECT r.id, r.name, r.invite_code, r.creator_id, COALESCE(u.email, ''),
 		          r.created_at, r.is_active, NOW()
 		   FROM rooms r
-		   JOIN users u ON u.id = r.creator_id
+		   LEFT JOIN users u ON u.id = r.creator_id
 		   WHERE r.id = $1
 		   ON CONFLICT (id) DO NOTHING
 		 ),
@@ -127,7 +122,7 @@ export async function deleteRoom(roomId: string): Promise<void> {
 }
 
 /**
- * Archive then hard-delete all rooms older than 6 hours (see ROOM_EXPIRY_HOURS).
+ * Archive then hard-delete all rooms older than 6 hours.
  * Uses a single CTE so the archive and delete are atomic — no TOCTOU window.
  * On concurrent calls the archive INSERTs are idempotent (DO NOTHING) because
  * each CTE is a single atomic statement; the second concurrent DELETE simply
@@ -144,10 +139,11 @@ export async function deleteExpiredRooms(): Promise<string[]> {
 		 archive_rooms AS (
 		   INSERT INTO archived_rooms
 		     (id, name, invite_code, creator_id, creator_email, created_at, is_active, archived_at)
-		   SELECT r.id, r.name, r.invite_code, r.creator_id, u.email,
+		   -- COALESCE handles the rare case where the creator account was deleted
+		   SELECT r.id, r.name, r.invite_code, r.creator_id, COALESCE(u.email, ''),
 		          r.created_at, r.is_active, NOW()
 		   FROM rooms r
-		   JOIN users u ON u.id = r.creator_id
+		   LEFT JOIN users u ON u.id = r.creator_id
 		   WHERE r.id IN (SELECT id FROM expired)
 		   ON CONFLICT (id) DO NOTHING
 		 ),
