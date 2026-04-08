@@ -81,11 +81,52 @@ export async function deleteRoom(roomId: string): Promise<void> {
 
 export async function deleteExpiredRooms(): Promise<string[]> {
 	const db = await getDb();
-	const result = await db.query<{ id: string }>(
-		`DELETE FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours'
-		 RETURNING id`
+
+	// Find expired room IDs
+	const expired = await db.query<{ id: string }>(
+		`SELECT id FROM rooms WHERE created_at < NOW() - INTERVAL '6 hours'`
 	);
-	return result.rows.map((r) => r.id);
+	if (expired.rows.length === 0) return [];
+
+	const expiredIds = expired.rows.map((r) => r.id);
+	const placeholders = expiredIds.map((_, i) => `$${i + 1}`).join(', ');
+
+	// Archive rooms
+	await db.query(
+		`INSERT INTO archived_rooms (id, name, invite_code, creator_id, created_at, is_active, archived_at)
+		 SELECT id, name, invite_code, creator_id, created_at, is_active, NOW()
+		 FROM rooms WHERE id IN (${placeholders})
+		 ON CONFLICT (id) DO NOTHING`,
+		expiredIds
+	);
+
+	// Archive participants
+	await db.query(
+		`INSERT INTO archived_participants (id, room_id, nickname, joined_at, last_seen_at, archived_at)
+		 SELECT id, room_id, nickname, joined_at, last_seen_at, NOW()
+		 FROM participants WHERE room_id IN (${placeholders})
+		 ON CONFLICT (id) DO NOTHING`,
+		expiredIds
+	);
+
+	// Archive messages with nickname
+	await db.query(
+		`INSERT INTO archived_messages (id, room_id, participant_id, nickname, content, created_at, archived_at)
+		 SELECT m.id, m.room_id, m.participant_id, p.nickname, m.content, m.created_at, NOW()
+		 FROM messages m
+		 JOIN participants p ON p.id = m.participant_id
+		 WHERE m.room_id IN (${placeholders})
+		 ON CONFLICT (id) DO NOTHING`,
+		expiredIds
+	);
+
+	// Delete expired rooms (cascades to participants and messages)
+	await db.query(
+		`DELETE FROM rooms WHERE id IN (${placeholders})`,
+		expiredIds
+	);
+
+	return expiredIds;
 }
 
 export async function countActiveRoomsByCreator(creatorId: string): Promise<number> {
