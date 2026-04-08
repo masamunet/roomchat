@@ -93,7 +93,7 @@ export async function deleteRoom(roomId: string): Promise<void> {
 		     (id, name, invite_code, creator_id, creator_email, created_at, is_active, archived_at)
 		   -- COALESCE handles the rare case where the creator account was deleted
 		   SELECT r.id, r.name, r.invite_code, r.creator_id, COALESCE(u.email, ''),
-		          r.created_at, r.is_active, NOW()
+		          COALESCE(r.created_at, NOW()), r.is_active, NOW()
 		   FROM rooms r
 		   LEFT JOIN users u ON u.id = r.creator_id
 		   WHERE r.id = $1
@@ -141,7 +141,7 @@ export async function deleteExpiredRooms(): Promise<string[]> {
 		     (id, name, invite_code, creator_id, creator_email, created_at, is_active, archived_at)
 		   -- COALESCE handles the rare case where the creator account was deleted
 		   SELECT r.id, r.name, r.invite_code, r.creator_id, COALESCE(u.email, ''),
-		          r.created_at, r.is_active, NOW()
+		          COALESCE(r.created_at, NOW()), r.is_active, NOW()
 		   FROM rooms r
 		   LEFT JOIN users u ON u.id = r.creator_id
 		   WHERE r.id IN (SELECT id FROM expired)
