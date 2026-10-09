@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import ChatBackground from '$lib/components/chat/ChatBackground.svelte';
 	import ChatInput from '$lib/components/ChatInput.svelte';
 	import QrOverlay from '$lib/components/QrOverlay.svelte';
 	import QrCodeDisplay from '$lib/components/QrCodeDisplay.svelte';
@@ -24,6 +25,12 @@
 	);
 	let viewMode = $state<ChatViewMode>('slack');
 	let showQrOverlay = $state(false);
+	let showTimeline = $state(false);
+	let timelineToggle: HTMLButtonElement;
+	let timelineClose = $state<HTMLButtonElement>();
+	let chronologicalMessages = $derived([...allMessages].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+	function closeTimeline() { showTimeline = false; timelineToggle?.focus(); }
+	$effect(() => { if (showTimeline) timelineClose?.focus(); });
 	let sendError = $state('');
 	let sending = $state(false);
 	let connectionStatus = $state<'connecting' | 'connected' | 'reconnecting'>('connecting');
@@ -220,7 +227,9 @@
 	<title>{data.room.name} - RoomChat</title>
 </svelte:head>
 
-<div class="flex h-[calc(100dvh-60px)]">
+<svelte:window onkeydown={(event) => { if (event.key === 'Escape' && showTimeline) closeTimeline(); }} />
+
+<div class="relative flex h-[calc(100dvh-60px)]">
 	<!-- Main Chat Area -->
 	<div class="flex flex-col flex-1 min-w-0">
 		<!-- Room Header -->
@@ -281,6 +290,7 @@
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm14 3h.01M17 14h3v3h-3v-3zm0 4h3v3h-3v-3zm-4 0h3v3h-3v-3z"/>
 					</svg>
 				</button>
+				<button bind:this={timelineToggle} type="button" class="rounded-lg border px-2 py-2 text-xs shrink-0" aria-expanded={showTimeline} aria-controls="chat-timeline" onclick={() => showTimeline ? closeTimeline() : showTimeline = true}>時系列</button>
 				<ViewSwitcher current={viewMode} onChange={handleViewChange} />
 			</div>
 		</div>
@@ -293,6 +303,7 @@
 		{/if}
 
 		<!-- Chat View -->
+		<ChatBackground>
 		{#key viewMode}
 			<div class="flex-1 flex flex-col min-h-0" transition:fade={{ duration: 150 }}>
 				{#if viewMode === 'slack'}
@@ -304,6 +315,7 @@
 				{/if}
 			</div>
 		{/key}
+		</ChatBackground>
 
 		<!-- Error Toast -->
 		{#if sendError}
@@ -316,8 +328,19 @@
 		<ChatInput onSend={sendMessage} disabled={sending} />
 	</div>
 
+	{#if showTimeline}
+		<aside id="chat-timeline" aria-label="チャットの時系列" class="absolute right-0 top-0 bottom-0 z-20 flex w-full max-w-sm flex-col border-l border-gray-200 bg-white shadow-xl sm:static sm:w-80 sm:shrink-0">
+			<div class="flex items-center justify-between border-b p-4">
+				<h2 class="font-semibold">時系列 <span class="text-xs text-gray-500">{chronologicalMessages.length}件</span></h2>
+				<button bind:this={timelineClose} type="button" class="rounded border px-3 py-1 text-sm" onclick={closeTimeline}>閉じる</button>
+			</div>
+			<p class="px-4 pt-3 text-xs text-gray-500">読み込み済みのメッセージを古い順に表示</p>
+			<SlackView messages={chronologicalMessages} currentParticipantId={data.participant.id} />
+		</aside>
+	{/if}
+
 	<!-- QR Sidebar: desktop only -->
-	{#if data.joinUrl}
+	{#if data.joinUrl && !showTimeline}
 		<div class="hidden lg:flex flex-col items-center justify-center w-64 border-l border-gray-200 bg-gray-50 shrink-0 p-4">
 			<p class="text-xs text-gray-500 mb-3">参加用QRコード</p>
 			<QrCodeDisplay value={data.joinUrl} size={180} />

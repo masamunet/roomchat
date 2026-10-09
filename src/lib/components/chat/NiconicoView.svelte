@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy, untrack } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import type { Message } from '$lib/types/index.js';
 
 	type Props = {
@@ -10,7 +10,7 @@
 	let { messages, currentParticipantId }: Props = $props();
 	let container: HTMLDivElement;
 	let liveRegion: HTMLDivElement;
-	let processedCount = $state(0);
+	const processedIds = new Set<string>();
 	let mounted = $state(false);
 	let activeElements: HTMLDivElement[] = [];
 	let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
@@ -27,7 +27,7 @@
 				activeTimeouts.push(timeoutId);
 			}
 		}
-		processedCount = messages.length;
+		for (const msg of messages) processedIds.add(msg.id);
 		mounted = true;
 	});
 
@@ -49,13 +49,13 @@
 	// Track which messages have already been animated
 	$effect(() => {
 		if (!mounted) return;
-		if (messages.length > processedCount) {
-			const newMessages = messages.slice(untrack(() => processedCount));
-			for (const msg of newMessages) {
-				spawnComment(msg);
-			}
-			processedCount = messages.length;
+		const newMessages = messages.filter((msg) => !processedIds.has(msg.id));
+		for (const msg of newMessages) {
+			processedIds.add(msg.id);
+			spawnComment(msg);
 		}
+		const currentIds = new Set(messages.map((msg) => msg.id));
+		for (const id of processedIds) if (!currentIds.has(id)) processedIds.delete(id);
 	});
 
 	function spawnComment(msg: Message) {
