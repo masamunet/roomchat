@@ -230,6 +230,17 @@
 <svelte:window onkeydown={(event) => { if (event.key === 'Escape' && showTimeline) closeTimeline(); }} />
 
 <div class="relative flex h-[calc(100dvh-60px)]">
+	{#if showTimeline}
+		<aside id="chat-timeline" aria-label="チャットの時系列" class="absolute left-0 top-0 bottom-0 z-20 flex w-full max-w-sm flex-col border-r border-gray-200 bg-white shadow-xl sm:static sm:w-80 sm:shrink-0">
+			<div class="flex items-center justify-between border-b p-4">
+				<h2 class="font-semibold">時系列 <span class="text-xs text-gray-500">{chronologicalMessages.length}件</span></h2>
+				<button bind:this={timelineClose} type="button" class="rounded border px-3 py-1 text-sm" onclick={closeTimeline}>閉じる</button>
+			</div>
+			<p class="px-4 pt-3 text-xs text-gray-500">読み込み済みのメッセージを古い順に表示</p>
+			<SlackView messages={chronologicalMessages} currentParticipantId={data.participant.id} />
+		</aside>
+	{/if}
+
 	<!-- Main Chat Area -->
 	<div class="flex flex-col flex-1 min-w-0">
 		<!-- Room Header -->
@@ -328,19 +339,8 @@
 		<ChatInput onSend={sendMessage} disabled={sending} />
 	</div>
 
-	{#if showTimeline}
-		<aside id="chat-timeline" aria-label="チャットの時系列" class="absolute right-0 top-0 bottom-0 z-20 flex w-full max-w-sm flex-col border-l border-gray-200 bg-white shadow-xl sm:static sm:w-80 sm:shrink-0">
-			<div class="flex items-center justify-between border-b p-4">
-				<h2 class="font-semibold">時系列 <span class="text-xs text-gray-500">{chronologicalMessages.length}件</span></h2>
-				<button bind:this={timelineClose} type="button" class="rounded border px-3 py-1 text-sm" onclick={closeTimeline}>閉じる</button>
-			</div>
-			<p class="px-4 pt-3 text-xs text-gray-500">読み込み済みのメッセージを古い順に表示</p>
-			<SlackView messages={chronologicalMessages} currentParticipantId={data.participant.id} />
-		</aside>
-	{/if}
-
 	<!-- QR Sidebar: desktop only -->
-	{#if data.joinUrl && !showTimeline}
+	{#if data.joinUrl}
 		<div class="hidden lg:flex flex-col items-center justify-center w-64 border-l border-gray-200 bg-gray-50 shrink-0 p-4">
 			<p class="text-xs text-gray-500 mb-3">参加用QRコード</p>
 			<QrCodeDisplay value={data.joinUrl} size={180} />

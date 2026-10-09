@@ -10,7 +10,8 @@ const config = {
 				'default-src': ['self'],
 				'script-src': ['self'],
 				'style-src': ['self', 'unsafe-inline'],
-				'img-src': ['self', 'https://*.googleusercontent.com', 'data:'],
+				'img-src': ['self', 'https://*.googleusercontent.com', 'data:', 'blob:'],
+				'media-src': ['self', 'blob:'],
 				'connect-src': ['self'],
 				'font-src': ['self']
 			}
