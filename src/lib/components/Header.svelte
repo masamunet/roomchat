@@ -1,70 +1,13 @@
 <script lang="ts">
-	import { tick } from 'svelte';
-
-	type Props = {
-		user: {
-			id: string;
-			name: string | null;
-			email: string;
-			avatarUrl: string | null;
-		} | null;
-	};
-
+	import { DropdownMenu } from 'bits-ui';
+	type Props = { user: { id: string; name: string | null; email: string; avatarUrl: string | null } | null };
 	let { user }: Props = $props();
-	let menuOpen = $state(false);
-	let triggerButton = $state<HTMLButtonElement | null>(null);
-	let menuContainer = $state<HTMLDivElement | null>(null);
+	let logoutForm = $state<HTMLFormElement>();
 
-	function closeMenu() {
-		menuOpen = false;
-		triggerButton?.focus();
-	}
-
-	function handleMenuKeydown(e: KeyboardEvent) {
-		if (!menuOpen) return;
-
-		if (e.key === 'Escape') {
-			e.preventDefault();
-			closeMenu();
-			return;
-		}
-
-		if (e.key === 'Tab') {
-			// Focus trap: cycle within the menu
-			const focusable = menuContainer?.querySelectorAll<HTMLElement>(
-				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-			);
-			if (!focusable || focusable.length === 0) return;
-
-			const first = focusable[0];
-			const last = focusable[focusable.length - 1];
-
-			if (e.shiftKey && document.activeElement === first) {
-				e.preventDefault();
-				last.focus();
-			} else if (!e.shiftKey && document.activeElement === last) {
-				e.preventDefault();
-				first.focus();
-			}
-		}
-	}
-
-	async function toggleMenu() {
-		menuOpen = !menuOpen;
-		if (menuOpen) {
-			await tick();
-			const firstFocusable = menuContainer?.querySelector<HTMLElement>(
-				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-			);
-			firstFocusable?.focus();
-		}
-	}
 </script>
 
-<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && menuOpen) closeMenu(); }} />
-
-<header class="bg-white border-b border-gray-200 px-4 py-3">
-	<div class="max-w-4xl mx-auto flex items-center justify-between">
+<header class="h-[60px] bg-white/95 border-b border-slate-200/70 px-5 flex items-center">
+	<div class="w-full max-w-5xl mx-auto flex items-center justify-between">
 		<a href="/" class="text-xl font-bold text-gray-900">
 			RoomChat
 		</a>
@@ -75,50 +18,22 @@
 					管理
 				</a>
 
-				<div class="relative">
-					<button
-						bind:this={triggerButton}
-						onclick={toggleMenu}
-						aria-expanded={menuOpen}
-						aria-haspopup="menu"
-						aria-label="ユーザーメニュー"
-						class="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-gray-300"
-					>
-						{#if user.avatarUrl}
-							<img src={user.avatarUrl} alt={user.name ?? 'ユーザー'} class="w-8 h-8 rounded-full" />
-						{:else}
-							<div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
-								{(user.name ?? user.email)[0].toUpperCase()}
-							</div>
-						{/if}
-					</button>
-
-					{#if menuOpen}
-						<div
-							role="presentation"
-							class="fixed inset-0 z-10"
-							onclick={closeMenu}
-						></div>
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							bind:this={menuContainer}
-							onkeydown={handleMenuKeydown}
-							role="menu"
-							tabindex="-1"
-							class="absolute right-0 top-10 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-48"
-						>
-							<div class="px-4 py-2 border-b border-gray-100">
-								<p class="text-sm font-medium text-gray-900">{user.name ?? 'ユーザー'}</p>
-								<p class="text-xs text-gray-500">{user.email}</p>
-							</div>
-							<form method="POST" action="/auth/logout">
-								<button type="submit" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
-									ログアウト
-								</button>
-							</form>
-						</div>
-					{/if}
-				</div>
+				<form bind:this={logoutForm} method="POST" action="/auth/logout"></form>
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger class="rounded-full p-1 transition-shadow hover:ring-4 hover:ring-slate-100 focus-visible:outline-2 focus-visible:outline-blue-500" aria-label="ユーザーメニュー">
+						{#if user.avatarUrl}<img src={user.avatarUrl} alt="" class="size-8 rounded-full" />
+						{:else}<span class="flex size-8 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-600">{(user.name ?? user.email)[0].toUpperCase()}</span>{/if}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Portal>
+						<DropdownMenu.Content align="end" sideOffset={8} class="ui-popover min-w-60 p-1.5">
+							<DropdownMenu.Group>
+								<DropdownMenu.GroupHeading class="px-3 py-2"><span class="block text-sm font-semibold text-slate-900">{user.name ?? 'ユーザー'}</span><span class="block mt-1 text-xs font-normal text-slate-500">{user.email}</span></DropdownMenu.GroupHeading>
+								<DropdownMenu.Separator class="my-1 h-px bg-slate-100" />
+								<DropdownMenu.Item class="ui-menu-item text-red-600" onSelect={() => logoutForm?.requestSubmit()}>ログアウト</DropdownMenu.Item>
+							</DropdownMenu.Group>
+						</DropdownMenu.Content>
+					</DropdownMenu.Portal>
+				</DropdownMenu.Root>
 			{:else}
 				<a
 					href="/auth/google"

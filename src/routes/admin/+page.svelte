@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { enhance } from '$app/forms';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
@@ -18,7 +19,7 @@
 
 	<!-- Create Room Form -->
 	<form method="POST" action="?/create" use:enhance class="mb-8">
-		<div class="bg-white rounded-xl border border-gray-200 p-4">
+		<div class="ui-card bg-white rounded-xl border border-gray-200 p-4">
 			<h2 class="text-lg font-semibold text-gray-800 mb-3">新しいルームを作成</h2>
 			<div class="flex gap-3">
 				<input
@@ -29,14 +30,14 @@
 					maxlength="100"
 					aria-label="ルーム名"
 					aria-describedby={form?.error && form?.action === 'create' ? 'room-create-error' : undefined}
-					class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					class="ui-input flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 				/>
-				<button
+				<Button variant="primary"
 					type="submit"
 					class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 whitespace-nowrap"
 				>
 					作成
-				</button>
+				</Button>
 			</div>
 		{#if form?.error && form?.action === 'create'}
 				<p id="room-create-error" class="mt-2 text-sm text-red-600" role="alert">{form.error}</p>
@@ -54,12 +55,12 @@
 			<p class="text-gray-500 text-sm py-8 text-center">ルームがありません</p>
 		{:else}
 			{#each data.rooms as room}
-				<div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
+				<div class="ui-card bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap items-center justify-between gap-3">
 					<div class="flex-1 min-w-0">
 						<a href="/admin/{room.id}" class="text-base font-medium text-gray-900 hover:text-blue-600 truncate block">
 							{room.name}
 						</a>
-						<div class="flex items-center gap-3 mt-1">
+						<div class="flex flex-wrap items-center gap-3 mt-1">
 							<span class="text-xs text-gray-500">
 								招待コード: <code class="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{room.inviteCode}</code>
 							</span>
@@ -77,13 +78,13 @@
 						</a>
 						<form method="POST" action="?/delete" use:enhance bind:this={deleteFormRefs[room.id]}>
 							<input type="hidden" name="roomId" value={room.id} />
-							<button
+							<Button variant="danger"
 								type="button"
 								class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg"
 								onclick={() => { deleteTargetRoomId = room.id; }}
 							>
 								削除
-							</button>
+							</Button>
 						</form>
 					</div>
 				</div>

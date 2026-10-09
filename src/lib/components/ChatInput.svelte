@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import { Collapsible } from 'bits-ui';
 	type Props = {
 		onSend: (content: string) => void;
 		disabled?: boolean;
@@ -50,27 +52,27 @@
 	});
 </script>
 
-<div class="border-t border-gray-200 bg-white">
-	{#if showEmojiPicker}
+<Collapsible.Root bind:open={showEmojiPicker} class="border-t border-slate-200/70 bg-white">
+	<Collapsible.Content>
 		<div class="border-b border-gray-200 p-3 max-h-48 overflow-y-auto">
 			{#each EMOJI_CATEGORIES as category}
 				<div class="mb-2">
 					<p class="text-xs text-gray-500 mb-1">{category.name}</p>
 					<div class="flex flex-wrap gap-1">
 						{#each category.emojis as emoji}
-							<button
+							<Button variant="secondary"
 								type="button"
 								onclick={() => insertEmoji(emoji)}
-								class="text-2xl w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200"
+								class="!p-0 !text-2xl w-10 h-10 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200"
 							>
 								{emoji}
-							</button>
+							</Button>
 						{/each}
 					</div>
 				</div>
 			{/each}
 		</div>
-	{/if}
+	</Collapsible.Content>
 
 	<div class="flex items-end gap-2 p-3">
 		<div class="flex-1 relative">
@@ -80,24 +82,18 @@
 				onkeydown={handleKeydown}
 				placeholder={`メッセージを入力... (${isMac ? 'Cmd' : 'Ctrl'}+Enterで送信)`}
 				rows="1"
-				class="w-full px-4 py-2.5 pr-11 border border-gray-300 rounded-2xl resize-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32"
+				maxlength={2000}
+				aria-label="メッセージ"
+				class="ui-input w-full px-4 py-2.5 pr-11 border border-gray-300 rounded-2xl resize-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32"
 			></textarea>
-			<button
-				type="button"
-				onclick={() => showEmojiPicker = !showEmojiPicker}
-				class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-lg"
-				class:bg-blue-100={showEmojiPicker}
-				class:text-blue-600={showEmojiPicker}
-			>
-				😊
-			</button>
+			<Collapsible.Trigger aria-label="絵文字を選ぶ" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 size-9 flex items-center justify-center rounded-xl hover:bg-slate-100 text-lg focus-visible:outline-2 focus-visible:outline-blue-500">😊</Collapsible.Trigger>
 		</div>
-		<button
+		<Button variant="primary"
 			type="button"
 			onclick={handleSubmit}
 			disabled={!content.trim() || disabled}
 			aria-label={disabled ? '送信中...' : '送信'}
-			class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+			class="!p-0 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
 		>
 			{#if disabled}
 				<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -109,6 +105,6 @@
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-7 7m7-7l7 7" transform="rotate(45 12 12)"/>
 				</svg>
 			{/if}
-		</button>
+		</Button>
 	</div>
-</div>
+</Collapsible.Root>

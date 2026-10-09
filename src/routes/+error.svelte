@@ -7,7 +7,7 @@
 </svelte:head>
 
 <div class="flex flex-col items-center justify-center min-h-[calc(100dvh-60px)] px-4">
-	<div class="w-full max-w-sm text-center">
+	<div class="ui-card w-full max-w-sm p-8 text-center">
 		<p class="text-6xl font-bold text-gray-300 mb-4">{$page.status}</p>
 
 		<h1 class="text-xl font-bold text-gray-900 mb-2">
@@ -26,7 +26,7 @@
 
 		<a
 			href="/"
-			class="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800"
+			class="ui-button ui-button-primary inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800"
 		>
 			トップに戻る
 		</a>

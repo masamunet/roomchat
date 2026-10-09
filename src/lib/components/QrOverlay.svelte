@@ -1,43 +1,17 @@
 <script lang="ts">
+	import { Dialog } from 'bits-ui';
 	import QrCodeDisplay from './QrCodeDisplay.svelte';
-
-	type Props = {
-		joinUrl: string;
-		inviteCode: string;
-		onClose: () => void;
-	};
-
-	let { joinUrl, inviteCode, onClose }: Props = $props();
+	let { joinUrl, inviteCode, onClose }: { joinUrl: string; inviteCode: string; onClose: () => void } = $props();
 </script>
-
-<svelte:window onkeydown={(e) => { if (e.key === 'Escape') onClose(); }} />
-
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-	class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-	role="dialog"
-	aria-modal="true"
-	tabindex="-1"
-	onclick={onClose}
-	onkeydown={() => {}}
->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="bg-white rounded-2xl shadow-2xl p-6 mx-4 max-w-xs w-full text-center"
-		onclick={(e) => e.stopPropagation()}
-		onkeydown={() => {}}
-	>
-		<p class="text-sm text-gray-500 mb-3">このQRコードで参加できます</p>
-		<div class="flex justify-center mb-3">
-			<QrCodeDisplay value={joinUrl} size={200} />
-		</div>
-		<p class="font-mono text-lg font-bold tracking-widest text-gray-900 mb-1">{inviteCode}</p>
-		<p class="text-xs text-gray-400 break-all mb-4">{joinUrl}</p>
-		<button
-			onclick={onClose}
-			class="text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100"
-		>
-			閉じる
-		</button>
-	</div>
-</div>
+<Dialog.Root open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+	<!-- Keep the dialog inside the fullscreen element. -->
+	<Dialog.Overlay class="ui-overlay" />
+	<Dialog.Content class="ui-dialog text-center">
+		<Dialog.Title class="ui-dialog-title">ルームに招待</Dialog.Title>
+		<Dialog.Description class="ui-dialog-description">このQRコードで参加できます</Dialog.Description>
+		<div class="my-6 flex justify-center"><QrCodeDisplay value={joinUrl} size={200} /></div>
+		<p class="rounded-xl bg-slate-50 px-4 py-3 font-mono text-lg font-semibold tracking-widest text-slate-900">{inviteCode}</p>
+		<p class="my-3 break-all text-xs leading-relaxed text-slate-500">{joinUrl}</p>
+		<Dialog.Close class="ui-button ui-button-secondary w-full">閉じる</Dialog.Close>
+	</Dialog.Content>
+</Dialog.Root>

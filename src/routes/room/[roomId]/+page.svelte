@@ -1,5 +1,7 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { onMount, onDestroy } from 'svelte';
+	import { Collapsible } from 'bits-ui';
 	import { fade } from 'svelte/transition';
 	import ChatBackground from '$lib/components/chat/ChatBackground.svelte';
 	import ChatInput from '$lib/components/ChatInput.svelte';
@@ -25,12 +27,51 @@
 	);
 	let viewMode = $state<ChatViewMode>('slack');
 	let showQrOverlay = $state(false);
+	let chatScreen = $state<HTMLDivElement>();
+	let fullscreenButton = $state<HTMLButtonElement | null>(null);
+	let isFullscreen = $state(false);
+	let expandedScreen = $state(false);
+	let fullscreenBusy = $state(false);
+	let fullscreenError = $state('');
+	function syncFullscreen() {
+		isFullscreen = document.fullscreenElement === chatScreen;
+		if (!isFullscreen) fullscreenButton?.focus();
+	}
+	$effect(() => {
+		if (!expandedScreen) return;
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		return () => { document.body.style.overflow = previousOverflow; };
+	});
+	async function toggleFullscreen() {
+		if (!chatScreen || fullscreenBusy) return;
+		fullscreenError = '';
+		fullscreenBusy = true;
+		try {
+			if (expandedScreen) {
+				expandedScreen = false;
+			} else if (document.fullscreenElement === chatScreen) {
+				await document.exitFullscreen();
+			} else if (document.fullscreenEnabled && chatScreen.requestFullscreen) {
+				await chatScreen.requestFullscreen();
+			} else {
+				expandedScreen = true;
+			}
+		} catch {
+			fullscreenError = '全画面表示に切り替えられませんでした。もう一度お試しください。';
+		} finally {
+			fullscreenBusy = false;
+		}
+	}
+	function handleScreenKeydown(event: KeyboardEvent) {
+		if (event.key !== 'Escape') return;
+		if (expandedScreen) { expandedScreen = false; fullscreenButton?.focus(); }
+		if (showTimeline) closeTimeline();
+	}
 	let showTimeline = $state(false);
-	let timelineToggle: HTMLButtonElement;
-	let timelineClose = $state<HTMLButtonElement>();
+	let timelineToggle = $state<HTMLButtonElement | null>(null);
 	let chronologicalMessages = $derived([...allMessages].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
 	function closeTimeline() { showTimeline = false; timelineToggle?.focus(); }
-	$effect(() => { if (showTimeline) timelineClose?.focus(); });
 	let sendError = $state('');
 	let sending = $state(false);
 	let connectionStatus = $state<'connecting' | 'connected' | 'reconnecting'>('connecting');
@@ -227,24 +268,37 @@
 	<title>{data.room.name} - RoomChat</title>
 </svelte:head>
 
-<svelte:window onkeydown={(event) => { if (event.key === 'Escape' && showTimeline) closeTimeline(); }} />
+<svelte:window onkeydown={handleScreenKeydown} />
+<svelte:document onfullscreenchange={syncFullscreen} />
 
-<div class="relative flex h-[calc(100dvh-60px)]">
-	{#if showTimeline}
-		<aside id="chat-timeline" aria-label="チャットの時系列" class="absolute left-0 top-0 bottom-0 z-20 flex w-full max-w-sm flex-col border-r border-gray-200 bg-white shadow-xl sm:static sm:w-80 sm:shrink-0">
-			<div class="flex items-center justify-between border-b p-4">
-				<h2 class="font-semibold">時系列 <span class="text-xs text-gray-500">{chronologicalMessages.length}件</span></h2>
-				<button bind:this={timelineClose} type="button" class="rounded border px-3 py-1 text-sm" onclick={closeTimeline}>閉じる</button>
-			</div>
-			<p class="px-4 pt-3 text-xs text-gray-500">読み込み済みのメッセージを古い順に表示</p>
-			<SlackView messages={chronologicalMessages} currentParticipantId={data.participant.id} />
-		</aside>
-	{/if}
+<div bind:this={chatScreen} class="chat-screen relative flex h-[calc(100dvh-60px)] bg-gray-50" class:expanded-screen={expandedScreen}>
+	<Collapsible.Root bind:open={showTimeline} class="timeline-drawer" aria-label="チャット履歴">
+		<Collapsible.Trigger bind:ref={timelineToggle} class="timeline-tab" aria-label={showTimeline ? '時系列を閉じる' : '時系列を開く'} title={showTimeline ? '時系列を閉じる' : '時系列を開く'}>
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+				<path d="M8 4H4v16h4M12 7h8M12 12h8M12 17h8" stroke-linecap="round" stroke-linejoin="round" />
+			</svg>
+			<span class="timeline-tab-label">時系列</span>
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class:rotate-180={showTimeline}><path d="m9 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+		</Collapsible.Trigger>
+		<Collapsible.Content class="timeline-content">
+			<aside id="chat-timeline" aria-label="チャットの時系列" class="flex h-full min-h-0 flex-col">
+				<div class="flex items-center justify-between border-b border-slate-100 px-5 py-5">
+					<div>
+						<p class="mb-1 text-[10px] font-semibold tracking-[0.18em] text-slate-400">CHAT HISTORY</p>
+						<h2 class="text-sm font-semibold text-slate-900">時系列</h2>
+					</div>
+					<span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium tabular-nums text-slate-500">{chronologicalMessages.length}件</span>
+				</div>
+				<p class="px-5 pt-3 text-xs leading-relaxed text-slate-400">読み込み済みのメッセージを古い順に表示</p>
+				<SlackView messages={chronologicalMessages} currentParticipantId={data.participant.id} />
+			</aside>
+		</Collapsible.Content>
+	</Collapsible.Root>
 
 	<!-- Main Chat Area -->
 	<div class="flex flex-col flex-1 min-w-0">
 		<!-- Room Header -->
-		<div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+		<div class="bg-white/95 border-b border-slate-200/70 px-5 py-3 flex flex-wrap items-center justify-between gap-3">
 			<div class="min-w-0">
 				<h1 class="text-base font-semibold text-gray-900 truncate">{data.room.name}</h1>
 				{#if editingNickname}
@@ -254,22 +308,22 @@
 							bind:value={nicknameInput}
 							use:autofocus
 							maxlength={50}
-							class="text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
+							class="ui-input text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
 							onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') cancelEditNickname(); }}
 							disabled={nicknameSaving}
 						/>
-						<button
+						<Button variant="ghost"
 							type="button"
 							onclick={saveNickname}
 							disabled={nicknameSaving}
 							class="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
-						>保存</button>
-						<button
+						>保存</Button>
+						<Button variant="ghost"
 							type="button"
 							onclick={cancelEditNickname}
 							disabled={nicknameSaving}
 							class="text-xs text-gray-500 hover:text-gray-700"
-						>取消</button>
+						>取消</Button>
 					</div>
 					{#if nicknameError}
 						<p class="text-xs text-red-500 mt-0.5">{nicknameError}</p>
@@ -278,19 +332,20 @@
 					<p class="text-xs text-gray-500">
 						{currentNickname}として参加中
 						{#if canEditNickname}
-							<button
+							<Button variant="secondary"
 								type="button"
 								onclick={startEditNickname}
 								class="ml-1 text-blue-500 hover:text-blue-700 hover:underline"
 								title="ニックネームを変更（入室後5分以内）"
-							>変更</button>
+							>変更</Button>
 						{/if}
 					</p>
 				{/if}
 			</div>
-			<div class="flex items-center gap-2">
+			<div class="flex flex-wrap items-center gap-2">
+				<Button variant="secondary" bind:ref={fullscreenButton} type="button" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 shrink-0 disabled:opacity-50" aria-pressed={isFullscreen || expandedScreen} disabled={fullscreenBusy} onclick={toggleFullscreen}>{isFullscreen || expandedScreen ? '全画面解除' : '全画面'}</Button>
 				<!-- QR button: mobile only (sidebar shown on desktop) -->
-				<button
+				<Button variant="secondary"
 					type="button"
 					onclick={() => showQrOverlay = true}
 					class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 lg:hidden"
@@ -300,11 +355,14 @@
 					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm14 3h.01M17 14h3v3h-3v-3zm0 4h3v3h-3v-3zm-4 0h3v3h-3v-3z"/>
 					</svg>
-				</button>
-				<button bind:this={timelineToggle} type="button" class="rounded-lg border px-2 py-2 text-xs shrink-0" aria-expanded={showTimeline} aria-controls="chat-timeline" onclick={() => showTimeline ? closeTimeline() : showTimeline = true}>時系列</button>
+				</Button>
 				<ViewSwitcher current={viewMode} onChange={handleViewChange} />
 			</div>
 		</div>
+
+		{#if fullscreenError}
+			<p class="bg-red-50 px-4 py-2 text-sm text-red-600" role="alert">{fullscreenError}</p>
+		{/if}
 
 		<!-- Connection Status -->
 		{#if connectionStatus !== 'connected'}
@@ -348,7 +406,6 @@
 			<p class="text-xs text-gray-400 break-all mt-1 text-center">{data.joinUrl}</p>
 		</div>
 	{/if}
-</div>
 
 {#if showQrOverlay && data.joinUrl}
 	<QrOverlay
@@ -357,3 +414,22 @@
 		onClose={() => showQrOverlay = false}
 	/>
 {/if}
+
+</div>
+
+<style>
+	:global(.timeline-drawer) { position: relative; flex-shrink: 0; width: 0; z-index: 30; background: white; transition: width 220ms ease; }
+	:global(.timeline-drawer[data-state='open']) { width: 20rem; border-right: 1px solid #e2e8f0; }
+	:global(.timeline-content) { height: 100%; min-height: 0; overflow: hidden; }
+	:global(.timeline-tab) { position: absolute; left: 100%; top: 45%; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 36px; padding: 16px 6px; border: 1px solid #e2e8f0; border-left: 0; border-radius: 0 14px 14px 0; background: white; color: #64748b; box-shadow: 4px 2px 12px #0f172a0a; transition: color 150ms, background 150ms; }
+	:global(.timeline-tab:hover), :global(.timeline-tab[data-state='open']) { background: #eff6ff; color: #2563eb; }
+	:global(.timeline-tab:focus-visible) { outline: 2px solid #3b82f6; outline-offset: 3px; }
+	.timeline-tab-label { writing-mode: vertical-rl; font-size: 11px; font-weight: 600; letter-spacing: .15em; }
+	@media (max-width: 639px) {
+		:global(.timeline-drawer) { position: absolute; inset: 0 auto 0 0; }
+		:global(.timeline-drawer[data-state='open']) { width: min(20rem, calc(100% - 44px)); box-shadow: 8px 0 30px #0f172a1a; }
+	}
+	@media (prefers-reduced-motion: reduce) { :global(.timeline-drawer) { transition: none; } }
+	.chat-screen:fullscreen { width: 100%; height: 100dvh; }
+	.chat-screen.expanded-screen { position: fixed; inset: 0; z-index: 50; width: 100%; height: 100dvh; }
+</style>

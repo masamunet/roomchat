@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ToggleGroup } from 'bits-ui';
 	import type { ChatViewMode } from '$lib/types/index.js';
 
 	type Props = {
@@ -15,20 +16,10 @@
 	];
 </script>
 
-<div class="flex bg-gray-100 rounded-lg p-0.5" role="group" aria-label="チャット表示モード">
+<ToggleGroup.Root type="single" value={current} onValueChange={(value) => { if (value === 'slack' || value === 'line' || value === 'niconico') onChange(value); }} class="inline-flex items-center gap-1 rounded-xl border border-slate-200/70 bg-slate-100/80 p-1" aria-label="チャット表示モード">
 	{#each modes as mode}
-		<button
-			type="button"
-			aria-pressed={current === mode.value}
-			onclick={() => onChange(mode.value)}
-			class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
-			class:bg-white={current === mode.value}
-			class:text-gray-900={current === mode.value}
-			class:shadow-sm={current === mode.value}
-			class:text-gray-500={current !== mode.value}
-			class:hover:text-gray-700={current !== mode.value}
-		>
+		<ToggleGroup.Item value={mode.value} class="rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap text-slate-500 transition-colors hover:text-slate-900 data-[state=on]:bg-white data-[state=on]:text-slate-900 data-[state=on]:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
 			{mode.label}
-		</button>
+		</ToggleGroup.Item>
 	{/each}
-</div>
+</ToggleGroup.Root>
