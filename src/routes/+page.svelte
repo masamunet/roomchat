@@ -34,11 +34,14 @@
 					type="text"
 					bind:value={inviteCode}
 					placeholder="招待コードを入力"
-					maxlength="8"
+					maxlength="12"
+					autocapitalize="characters"
+					spellcheck={false}
 					aria-label="招待コード"
 					aria-describedby={error ? 'invite-code-error' : undefined}
 					class="ui-input w-full px-4 py-3 text-center text-xl font-mono tracking-widest border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
 				/>
+				<p class="text-xs text-gray-500 mt-2 text-center">新しい招待コードは4文字です。大文字・小文字は区別しません。</p>
 				{#if error}
 					<p id="invite-code-error" class="text-sm text-red-600 mt-1 text-center" role="alert">{error}</p>
 				{/if}

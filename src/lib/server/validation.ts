@@ -4,7 +4,8 @@ export function isValidUUID(value: string): boolean {
 	return UUID_RE.test(value);
 }
 
-const INVITE_CODE_RE = /^[A-HJ-NP-Z2-9]{8,12}$/;
+// Keep accepting previously issued 8–12 character codes.
+const INVITE_CODE_RE = /^(?:[A-HJ-NP-Z2-9]{4}|[A-HJ-NP-Z2-9]{8,12})$/i;
 
 export function isValidInviteCode(value: string): boolean {
 	return INVITE_CODE_RE.test(value);

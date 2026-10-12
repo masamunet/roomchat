@@ -72,7 +72,7 @@ export async function getRoomByInviteCode(inviteCode: string): Promise<Room | nu
 	const result = await db.query<RoomRow>(
 		`SELECT * FROM rooms WHERE invite_code = $1 AND is_active = TRUE
 		 AND created_at > NOW() - INTERVAL '6 hours'`,
-		[inviteCode]
+		[inviteCode.toUpperCase()]
 	);
 	return result.rows.length > 0 ? toRoom(result.rows[0]) : null;
 }

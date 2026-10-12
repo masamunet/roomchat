@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RoomChat is a real-time anonymous chat application built with SvelteKit. Users create rooms via Google OAuth, share 8-character invite codes, and participants join with nicknames. Rooms auto-delete after 6 hours.
+RoomChat is a real-time anonymous chat application built with SvelteKit. Users create rooms via Google OAuth, share 4-character case-insensitive invite codes (legacy 8–12-character codes remain valid), and participants join with nicknames. Rooms auto-delete after 6 hours.
 
 ## Commands
 
