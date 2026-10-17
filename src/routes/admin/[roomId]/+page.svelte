@@ -3,8 +3,9 @@
 	import { onDestroy } from 'svelte';
 	import QrCode from '$lib/components/QrCodeDisplay.svelte';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
+	import { ROOM_EXTENSION_PLANS, formatYen } from '$lib/plans.js';
 
-	let { data } = $props();
+	let { data, form } = $props();
 	let copied = $state<'code' | 'invitation' | null>(null);
 	let copyError = $state('');
 	let copyFeedbackTimer: ReturnType<typeof setTimeout> | undefined;
@@ -38,7 +39,11 @@
 
 	<div class="ui-card bg-white rounded-xl border border-gray-200 p-6">
 		<h1 class="text-xl font-bold text-gray-900 mb-1">{data.room.name}</h1>
-		<p class="text-sm text-orange-600 font-medium mb-6">{getRemainingTime(data.room.createdAt)}</p>
+		<p class="text-sm text-orange-600 font-medium mb-6">{getRemainingTime(data.room.expiresAt)}</p>
+
+		{#if data.purchased}
+			<p class="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700" role="status">ルームを延長しました。ご購入ありがとうございます。</p>
+		{/if}
 
 		<!-- QR Code -->
 		<div class="flex justify-center mb-6">
@@ -88,6 +93,29 @@
 		>
 			ログをCSVダウンロード
 		</a>
+
+		<!-- Room Extension -->
+		{#if data.billingEnabled}
+			<div class="mt-6 pt-4 border-t border-gray-100">
+				<p class="text-sm font-medium text-gray-700">ルームを延長する</p>
+				<p class="text-xs text-gray-500 mt-1 mb-3">残り時間に追加されます。お支払いはStripeの決済ページで行います。</p>
+				<form method="POST" action="?/extend" class="grid grid-cols-3 gap-2">
+					{#each ROOM_EXTENSION_PLANS as plan}
+						<button
+							type="submit"
+							name="plan"
+							value={plan.id}
+							class="ui-button ui-button-secondary flex flex-col items-center rounded-lg border border-gray-200 bg-white px-2 py-3 hover:border-blue-300 hover:bg-blue-50"
+						>
+							<span class="text-sm font-medium text-gray-900">{plan.label}</span>
+							<span class="text-xs text-gray-500 mt-0.5">{formatYen(plan.amount)}（税込）</span>
+						</button>
+					{/each}
+				</form>
+				{#if form?.error}<p class="mt-2 text-sm text-red-600" role="alert">{form.error}</p>{/if}
+				<p class="mt-2 text-xs text-gray-400"><a href="/legal/commerce" class="underline hover:text-gray-600">特定商取引法に基づく表記</a></p>
+			</div>
+		{/if}
 
 		<!-- Participants -->
 		{#if data.participants.length > 0}

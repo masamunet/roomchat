@@ -72,3 +72,15 @@ export async function getAllMessagesByRoom(roomId: string): Promise<Message[]> {
 	);
 	return result.rows.map(toMessage);
 }
+
+export async function getArchivedMessagesByRoom(roomId: string): Promise<Message[]> {
+	const db = await getDb();
+	const result = await db.query<MessageRow>(
+		`SELECT id, room_id, participant_id, content, created_at, nickname
+		 FROM archived_messages
+		 WHERE room_id = $1
+		 ORDER BY created_at ASC`,
+		[roomId]
+	);
+	return result.rows.map(toMessage);
+}
