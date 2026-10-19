@@ -6,9 +6,9 @@
 
 <LegalPage title="特定商取引法に基づく表記" updated="2026年10月17日">
 	<dl>
-		<dt>販売事業者</dt>
+		<dt>販売業者</dt>
 		<dd>{OPERATOR.name}</dd>
-		<dt>運営統括責任者</dt>
+		<dt>代表責任者</dt>
 		<dd>{OPERATOR.representative}</dd>
 		<dt>所在地</dt>
 		<dd>{OPERATOR.address}</dd>

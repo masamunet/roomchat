@@ -1,12 +1,9 @@
-/**
- * Operator details shown on the legal pages.
- * TODO: fill in from the operator's existing 特定商取引法に基づく表記 before enabling billing in production.
- */
+/** Operator details shown on the legal pages (same operator as https://daigaku.university/tokushoho/). */
 export const OPERATOR = {
-	name: '【要記入】販売事業者名',
-	representative: '【要記入】運営統括責任者',
-	address: '【要記入】所在地',
-	phone: '請求があった場合は遅滞なく開示いたします',
-	email: '【要記入】お問い合わせメールアドレス',
-	established: '2026年10月17日'
+	name: '大学堂株式会社',
+	representative: '宇都宮 正宗',
+	address: '大阪府豊能郡豊能町ときわ台1−11−10',
+	phone: '請求があれば遅滞なく開示いたします。',
+	// Full-width ＠ matches the operator's own site and keeps the address out of naive scrapers.
+	email: 'daigaku.university＠gmail.com'
 } as const;
