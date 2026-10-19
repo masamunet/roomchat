@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RoomChat is a real-time anonymous chat application built with SvelteKit. Users create rooms via Google OAuth, share 4-character case-insensitive invite codes (legacy 8–12-character codes remain valid), and participants join with nicknames. Rooms auto-delete after 6 hours.
+RoomChat is a real-time anonymous chat application built with SvelteKit. Users create rooms via Google OAuth, share 4-character case-insensitive invite codes (legacy 8–12-character codes remain valid), and participants join with nicknames. Rooms auto-delete after 6 hours unless extended with a paid plan (Stripe).
 
 ## Commands
 
@@ -45,7 +45,8 @@ Three interchangeable views in `src/lib/components/chat/`: SlackView, LineView, 
 
 ### Key Constraints
 - Max 3 active rooms per user
-- Rooms auto-expire after 6 hours
+- Rooms auto-expire at `rooms.expires_at` (6 hours after creation; paid extensions add 12h / 3d / 1 month)
+- Expired rooms are archived to `archived_*` tables, not erased; past-log CSV for an archived room is a paid purchase
 - Nicknames must be unique per room (1-50 chars)
 - Messages: 1-2000 chars, control characters stripped
 - Rate limiting on message POST
@@ -56,3 +57,4 @@ See `.env.example`. Key variables:
 - `DATABASE_URL` — PostgreSQL connection string (omit for PGLite in dev)
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — OAuth credentials
 - `ORIGIN` — Application URL
+- `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` — roomchat-only Stripe sandbox; paid plans are hidden when unset. Prices are found by `roomchat_*` lookup_keys (`src/lib/plans.ts`)

@@ -2,6 +2,8 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import Header from '$lib/components/Header.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import { page } from '$app/state';
 
 	let { data, children } = $props();
 </script>
@@ -16,4 +18,7 @@
 	<main class="flex-1">
 		{@render children()}
 	</main>
+	{#if !page.url.pathname.startsWith('/room/')}
+		<Footer />
+	{/if}
 </div>

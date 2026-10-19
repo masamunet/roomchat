@@ -19,6 +19,7 @@ export interface Room {
 	inviteCode: string;
 	creatorId: string;
 	createdAt: Date;
+	expiresAt: Date;
 	isActive: boolean;
 }
 
