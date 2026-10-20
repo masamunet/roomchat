@@ -1,6 +1,9 @@
 /** Hours a room stays open without any purchase. */
 export const FREE_ROOM_HOURS = 6;
 
+/** Years an ended room's log is kept (for past-log CSV) before it is permanently deleted. */
+export const ARCHIVE_RETENTION_YEARS = 1;
+
 export interface RoomExtensionPlan {
 	id: 'extend_12h' | 'extend_3d' | 'extend_1m';
 	/** Stripe price lookup_key (roomchat_ prefix keeps it apart from other products on the account). */

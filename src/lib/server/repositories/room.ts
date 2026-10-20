@@ -1,6 +1,7 @@
 import { getDb } from '$lib/server/db/index.js';
 import { generateInviteCode } from '$lib/utils/invite-code.js';
 import type { Room } from '$lib/types/index.js';
+import { ARCHIVE_RETENTION_YEARS } from '$lib/plans.js';
 
 
 interface RoomRow {
@@ -171,6 +172,21 @@ export async function deleteExpiredRooms(): Promise<string[]> {
 	);
 
 	return result.rows.map((r) => r.id);
+}
+
+/** Permanently delete archived rooms (and their participants and messages) past the retention period. */
+export async function purgeOldArchives(): Promise<void> {
+	const db = await getDb();
+	await db.query(
+		`WITH old AS (
+		   DELETE FROM archived_rooms WHERE archived_at < NOW() - make_interval(years => $1) RETURNING id
+		 ),
+		 old_messages AS (
+		   DELETE FROM archived_messages WHERE room_id IN (SELECT id FROM old)
+		 )
+		 DELETE FROM archived_participants WHERE room_id IN (SELECT id FROM old)`,
+		[ARCHIVE_RETENTION_YEARS]
+	);
 }
 
 export async function countActiveRoomsByCreator(creatorId: string): Promise<number> {

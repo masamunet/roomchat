@@ -3,7 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
-	import { ARCHIVE_CSV_PLAN, formatYen } from '$lib/plans.js';
+	import { ARCHIVE_CSV_PLAN, ARCHIVE_RETENTION_YEARS, formatYen } from '$lib/plans.js';
 	import PurchaseConfirmDialog, { type PurchaseItem } from '$lib/components/PurchaseConfirmDialog.svelte';
 	import { format } from 'date-fns';
 
@@ -101,7 +101,7 @@
 	{#if data.archivedRooms.length > 0}
 		<div id="archived" class="space-y-3 mt-10">
 			<h2 class="text-lg font-semibold text-gray-800">過去のルーム</h2>
-			<p class="text-xs text-gray-500">終了したルームのログをCSVでダウンロードできます（1ルームにつき{formatYen(ARCHIVE_CSV_PLAN.amount)}・税込）。</p>
+			<p class="text-xs text-gray-500">終了したルームのログをCSVでダウンロードできます（1ルームにつき{formatYen(ARCHIVE_CSV_PLAN.amount)}・税込）。ログはルーム終了から{ARCHIVE_RETENTION_YEARS}年で削除されます。</p>
 			{#if data.purchased}
 				<p class="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700" role="status">ご購入ありがとうございます。CSVをダウンロードできます。</p>
 			{/if}

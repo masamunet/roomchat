@@ -1,6 +1,7 @@
 <script lang="ts">
 	import LegalPage from '../LegalPage.svelte';
 	import { OPERATOR } from '$lib/legal.js';
+	import { ARCHIVE_RETENTION_YEARS } from '$lib/plans.js';
 </script>
 
 <LegalPage title="プライバシーポリシー" updated="2026年10月20日">
@@ -24,7 +25,7 @@
 	</ul>
 
 	<h2>3. データの保管</h2>
-	<p>ルーム終了後、チャット履歴（ニックネーム・メッセージ）は利用者の閲覧画面からは削除されますが、過去ログダウンロードの提供および不正利用への対応のため、当社のサーバーで保管します。</p>
+	<p>ルーム終了後、チャット履歴（ニックネーム・メッセージ）は利用者の閲覧画面からは削除されますが、過去ログダウンロードの提供および不正利用への対応のため、ルーム終了から{ARCHIVE_RETENTION_YEARS}年間、当社のサーバーで保管します。保管期間を過ぎたチャット履歴は自動的に削除され、過去ログダウンロードも利用できなくなります。</p>
 
 	<h2>4. 第三者提供・委託</h2>
 	<p>当社は、法令に基づく場合を除き、本人の同意なく個人情報を第三者に提供しません。決済処理はStripe, Inc.に、認証はGoogle LLCに、サーバー運用はRailway Corporationにそれぞれ委託しています。</p>

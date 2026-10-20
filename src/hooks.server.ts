@@ -1,6 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db/index.js';
 import { runMigrations } from '$lib/server/db/migrate.js';
+import { purgeOldArchives } from '$lib/server/repositories/room.js';
 
 let initPromise: Promise<void> | null = null;
 
@@ -14,7 +15,7 @@ function initializeDb() {
 	return initPromise;
 }
 
-// Periodically clean expired sessions (at most once per 10 minutes)
+// Periodically clean expired sessions and archives past retention (at most once per 10 minutes)
 let lastSessionCleanup = 0;
 async function cleanExpiredSessions() {
 	const now = Date.now();
@@ -22,6 +23,7 @@ async function cleanExpiredSessions() {
 	lastSessionCleanup = now;
 	const db = await getDb();
 	await db.query(`DELETE FROM sessions WHERE expires_at < NOW()`);
+	await purgeOldArchives();
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
