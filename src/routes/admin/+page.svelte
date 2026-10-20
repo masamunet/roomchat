@@ -4,12 +4,14 @@
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import { ARCHIVE_CSV_PLAN, formatYen } from '$lib/plans.js';
+	import PurchaseConfirmDialog, { type PurchaseItem } from '$lib/components/PurchaseConfirmDialog.svelte';
 	import { format } from 'date-fns';
 
 	let { data, form } = $props();
 
 	let deleteTargetRoomId = $state<string | null>(null);
 	let deleteFormRefs: Record<string, HTMLFormElement> = {};
+	let purchase = $state<PurchaseItem | null>(null);
 </script>
 
 <svelte:head>
@@ -41,6 +43,7 @@
 					作成
 				</Button>
 			</div>
+			<p class="mt-2 text-xs text-gray-500">作成により<a href="/legal/terms" class="underline">利用規約</a>と<a href="/legal/privacy" class="underline">プライバシーポリシー</a>に同意したものとみなします。</p>
 		{#if form?.error && form?.action === 'create'}
 				<p id="room-create-error" class="mt-2 text-sm text-red-600" role="alert">{form.error}</p>
 			{/if}
@@ -122,15 +125,20 @@
 							CSVダウンロード
 						</a>
 					{:else if data.billingEnabled}
-						<form method="POST" action="?/buyArchiveCsv">
-							<input type="hidden" name="roomId" value={room.id} />
-							<button
-								type="submit"
-								class="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg"
-							>
-								CSVを購入（{formatYen(ARCHIVE_CSV_PLAN.amount)}）
-							</button>
-						</form>
+						<button
+							type="button"
+							onclick={() => purchase = {
+								kind: 'archive_csv',
+								name: `${ARCHIVE_CSV_PLAN.label}（${room.name}）`,
+								detail: `終了したこのルームのメッセージ${room.messageCount}件をCSVファイルでダウンロードできるようになります。`,
+								amount: ARCHIVE_CSV_PLAN.amount,
+								action: '?/buyArchiveCsv',
+								fields: { roomId: room.id }
+							}}
+							class="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg"
+						>
+							CSVを購入（{formatYen(ARCHIVE_CSV_PLAN.amount)}）
+						</button>
 					{/if}
 				</div>
 			{/each}
@@ -155,3 +163,5 @@
 	}}
 	onCancel={() => { deleteTargetRoomId = null; }}
 />
+
+<PurchaseConfirmDialog item={purchase} onCancel={() => purchase = null} />

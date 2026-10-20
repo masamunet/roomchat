@@ -4,11 +4,24 @@
 	import QrCode from '$lib/components/QrCodeDisplay.svelte';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
 	import { ROOM_EXTENSION_PLANS, formatYen } from '$lib/plans.js';
+	import PurchaseConfirmDialog, { type PurchaseItem } from '$lib/components/PurchaseConfirmDialog.svelte';
 
 	let { data, form } = $props();
 	let copied = $state<'code' | 'invitation' | null>(null);
 	let copyError = $state('');
 	let copyFeedbackTimer: ReturnType<typeof setTimeout> | undefined;
+	let purchase = $state<PurchaseItem | null>(null);
+
+	function confirmExtension(plan: (typeof ROOM_EXTENSION_PLANS)[number]) {
+		purchase = {
+			kind: 'room_extension',
+			name: `ルーム${plan.label}（${data.room.name}）`,
+			detail: `このルームの終了時刻を${plan.hours}時間後ろに延長します。`,
+			amount: plan.amount,
+			action: '?/extend',
+			fields: { plan: plan.id }
+		};
+	}
 
 	onDestroy(() => clearTimeout(copyFeedbackTimer));
 
@@ -99,19 +112,18 @@
 			<div class="mt-6 pt-4 border-t border-gray-100">
 				<p class="text-sm font-medium text-gray-700">ルームを延長する</p>
 				<p class="text-xs text-gray-500 mt-1 mb-3">残り時間に追加されます。お支払いはStripeの決済ページで行います。</p>
-				<form method="POST" action="?/extend" class="grid grid-cols-3 gap-2">
+				<div class="grid grid-cols-3 gap-2">
 					{#each ROOM_EXTENSION_PLANS as plan}
 						<button
-							type="submit"
-							name="plan"
-							value={plan.id}
+							type="button"
+							onclick={() => confirmExtension(plan)}
 							class="ui-button ui-button-secondary flex flex-col items-center rounded-lg border border-gray-200 bg-white px-2 py-3 hover:border-blue-300 hover:bg-blue-50"
 						>
 							<span class="text-sm font-medium text-gray-900">{plan.label}</span>
 							<span class="text-xs text-gray-500 mt-0.5">{formatYen(plan.amount)}（税込）</span>
 						</button>
 					{/each}
-				</form>
+				</div>
 				{#if form?.error}<p class="mt-2 text-sm text-red-600" role="alert">{form.error}</p>{/if}
 				<p class="mt-2 text-xs text-gray-400"><a href="/legal/commerce" class="underline hover:text-gray-600">特定商取引法に基づく表記</a></p>
 			</div>
@@ -130,3 +142,5 @@
 		{/if}
 	</div>
 </div>
+
+<PurchaseConfirmDialog item={purchase} onCancel={() => purchase = null} />
