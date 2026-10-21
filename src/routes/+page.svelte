@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
 	import { goto } from '$app/navigation';
+	import { ARCHIVE_CSV_PLAN, FREE_ROOM_HOURS, ROOM_EXTENSION_PLANS, formatYen } from '$lib/plans.js';
 
 	let inviteCode = $state('');
 	let error = $state('');
@@ -21,7 +22,7 @@
 	<title>RoomChat</title>
 </svelte:head>
 
-<div class="flex flex-col items-center justify-center min-h-[calc(100dvh-60px)] px-4">
+<div class="flex flex-col items-center justify-center gap-6 min-h-[calc(100dvh-60px)] px-4 py-8">
 	<div class="ui-card w-full max-w-sm p-7 sm:p-8">
 		<div class="text-center mb-8">
 			<h1 class="text-3xl font-bold text-gray-900 mb-2">RoomChat</h1>
@@ -54,4 +55,16 @@
 			</Button>
 		</form>
 	</div>
+
+	<section class="ui-card w-full max-w-sm p-6 text-sm text-gray-700" aria-labelledby="pricing-heading">
+		<h2 id="pricing-heading" class="text-base font-semibold text-gray-900 mb-2">料金</h2>
+		<p class="mb-3">Googleアカウントでログインすると、ルームを無料で作成できます。ルームは作成から{FREE_ROOM_HOURS}時間で終了します。必要に応じて、次のオプションを購入できます（すべて税込・1回払い）。</p>
+		<ul class="space-y-1">
+			{#each ROOM_EXTENSION_PLANS as plan}
+				<li class="flex justify-between"><span>ルーム{plan.label}</span><span>{formatYen(plan.amount)}</span></li>
+			{/each}
+			<li class="flex justify-between"><span>{ARCHIVE_CSV_PLAN.label}（1ルーム）</span><span>{formatYen(ARCHIVE_CSV_PLAN.amount)}</span></li>
+		</ul>
+		<p class="mt-3 text-xs text-gray-500"><a href="/legal/commerce" class="underline">特定商取引法に基づく表記</a></p>
+	</section>
 </div>
