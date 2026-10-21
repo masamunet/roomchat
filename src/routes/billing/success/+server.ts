@@ -29,5 +29,5 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	if (session.metadata.kind === 'room_extension') {
 		redirect(303, `/admin/${roomId}?purchased=extension`);
 	}
-	redirect(303, `/admin?purchased=archive_csv#archived`);
+	redirect(303, `/admin/archived?purchased=archive_csv`);
 };

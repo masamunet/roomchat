@@ -226,7 +226,16 @@ function toArchivedRoom(row: ArchivedRoomRow): ArchivedRoom {
 	};
 }
 
-export async function listArchivedRoomsByCreator(creatorId: string, limit = 50): Promise<ArchivedRoom[]> {
+export async function countArchivedRoomsByCreator(creatorId: string): Promise<number> {
+	const db = await getDb();
+	const result = await db.query<{ count: string }>(
+		`SELECT count(*)::text as count FROM archived_rooms WHERE creator_id = $1`,
+		[creatorId]
+	);
+	return parseInt(result.rows[0]?.count ?? '0', 10);
+}
+
+export async function listArchivedRoomsByCreator(creatorId: string, limit = 500): Promise<ArchivedRoom[]> {
 	const db = await getDb();
 	const result = await db.query<ArchivedRoomRow>(
 		`SELECT r.id, r.name, r.created_at, r.archived_at,
