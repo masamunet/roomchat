@@ -39,6 +39,9 @@
 			>
 				入室する
 			</Button>
+			<p class="text-xs text-gray-500 text-center leading-relaxed">
+				入室により<a href="/legal/terms" class="underline">利用規約</a>と<a href="/legal/privacy" class="underline">プライバシーポリシー</a>に同意したものとみなします。投稿したメッセージはルーム終了から1年間当社が保管し、ルーム作成者がダウンロードできる場合があります。
+			</p>
 		</form>
 	</div>
 </div>

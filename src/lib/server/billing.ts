@@ -1,5 +1,6 @@
 import type Stripe from 'stripe';
 import { getStripe, resolvePriceId } from '$lib/server/stripe.js';
+import { CANCELLATION_POLICY, CHECKOUT_EXPIRES_MINUTES, DELIVERY_TIMING } from '$lib/plans.js';
 import { createPendingPayment, fulfillPayment, transitionPaymentStatus, type PaymentKind } from '$lib/server/repositories/payment.js';
 
 interface CheckoutInput {
@@ -34,8 +35,12 @@ export async function createCheckout(input: CheckoutInput): Promise<string> {
 		payment_intent_data: { metadata },
 		success_url: `${input.origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
 		cancel_url: `${input.origin}${input.cancelPath}`,
+		// Checkout is the final confirmation screen, so it repeats the delivery and cancellation terms.
+		custom_text: {
+			submit: { message: `${DELIVERY_TIMING}${CANCELLATION_POLICY[input.kind]}` }
+		},
 		// Short-lived so an extension is rarely paid for after its room has expired.
-		expires_at: Math.floor(Date.now() / 1000) + 30 * 60
+		expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRES_MINUTES * 60
 	});
 
 	await createPendingPayment({
