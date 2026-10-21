@@ -290,7 +290,7 @@
 					<span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium tabular-nums text-slate-500">{chronologicalMessages.length}件</span>
 				</div>
 				<p class="px-5 pt-3 text-xs leading-relaxed text-slate-400">読み込み済みのメッセージを古い順に表示</p>
-				<SlackView messages={chronologicalMessages} currentParticipantId={data.participant.id} />
+				<SlackView messages={chronologicalMessages} currentParticipantId={data.participant.id} followLatest />
 			</aside>
 		</Collapsible.Content>
 	</Collapsible.Root>

@@ -6,21 +6,34 @@
 	type Props = {
 		messages: Message[];
 		currentParticipantId: string;
+		/** Always keep the newest (bottom) message in view, even when the user has scrolled up. */
+		followLatest?: boolean;
 	};
 
-	let { messages, currentParticipantId }: Props = $props();
+	let { messages, currentParticipantId, followLatest = false }: Props = $props();
 	let scrollContainer: HTMLDivElement;
 
 	$effect(() => {
 		if (messages.length && scrollContainer) {
 			const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
 			const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-			if (isNearBottom) {
+			if (followLatest || isNearBottom) {
 				tick().then(() => {
 					scrollContainer.scrollTop = scrollContainer.scrollHeight;
 				});
 			}
 		}
+	});
+
+	// The container is hidden while the timeline drawer is closed, so jump to the newest
+	// message whenever it becomes visible or resizes (e.g. during the drawer's open animation).
+	$effect(() => {
+		if (!followLatest || !scrollContainer) return;
+		const observer = new ResizeObserver(() => {
+			scrollContainer.scrollTop = scrollContainer.scrollHeight;
+		});
+		observer.observe(scrollContainer);
+		return () => observer.disconnect();
 	});
 </script>
 
