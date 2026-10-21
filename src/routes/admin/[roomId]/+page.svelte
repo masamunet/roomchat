@@ -98,6 +98,14 @@
 			入室する
 		</a>
 
+		<!-- Dashboard -->
+		<a
+			href="/admin/{data.room.id}/dashboard"
+			class="ui-button ui-button-secondary block w-full text-center px-4 py-3 mt-3 bg-white text-gray-700 font-medium rounded-lg hover:bg-gray-50"
+		>
+			ダッシュボードを見る
+		</a>
+
 		<!-- CSV Download -->
 		<a
 			href="/api/rooms/{data.room.id}/logs.csv"
