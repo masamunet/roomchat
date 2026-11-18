@@ -40,4 +40,4 @@ export interface Message {
 	nickname?: string;
 }
 
-export type ChatViewMode = 'slack' | 'line' | 'niconico';
+export type ChatViewMode = 'list' | 'bubble' | 'danmaku';

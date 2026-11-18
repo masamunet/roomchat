@@ -110,22 +110,22 @@
 	.custom-background :global([role='log']) { background: transparent; }
 	.custom-background :global(article) { border-radius: .75rem; padding: .5rem; }
 	.custom-background[data-preset='shadow'] :global(article),
-	.chat-stage[data-preset='shadow'] :global(.niconico-comment) { color: white !important; text-shadow: 0 1px 3px black, 0 0 5px black; }
+	.chat-stage[data-preset='shadow'] :global(.danmaku-comment) { color: white !important; text-shadow: 0 1px 3px black, 0 0 5px black; }
 	.custom-background[data-preset='shadow'] :global(article strong),
 	.custom-background[data-preset='shadow'] :global(article p),
 	.custom-background[data-preset='shadow'] :global(article time) { color: white; }
 	.custom-background[data-preset='shadow'] :global(article .rounded-2xl) { background: #0009; color: white; }
 	.custom-background[data-preset='light'] :global(article),
-	.chat-stage[data-preset='light'] :global(.niconico-comment) { background: #fffffff0; color: #111827 !important; text-shadow: none; }
+	.chat-stage[data-preset='light'] :global(.danmaku-comment) { background: #fffffff0; color: #111827 !important; text-shadow: none; }
 	.custom-background[data-preset='light'] :global(article p),
 	.custom-background[data-preset='light'] :global(article strong),
 	.custom-background[data-preset='light'] :global(article time) { color: #111827; }
 	.custom-background[data-preset='dark'] :global(article),
-	.chat-stage[data-preset='dark'] :global(.niconico-comment) { background: #111827ed; color: white !important; text-shadow: none; }
+	.chat-stage[data-preset='dark'] :global(.danmaku-comment) { background: #111827ed; color: white !important; text-shadow: none; }
 	.custom-background[data-preset='dark'] :global(article p),
 	.custom-background[data-preset='dark'] :global(article strong),
 	.custom-background[data-preset='dark'] :global(article time) { color: white; }
 	.custom-background[data-preset='dark'] :global(article .rounded-2xl) { background: #374151; color: white; }
 	.custom-background[data-preset='light'] :global(article .rounded-2xl) { color: #111827; }
-	.chat-stage :global(.niconico-comment) { border-radius: .5rem; padding: .25rem .5rem; }
+	.chat-stage :global(.danmaku-comment) { border-radius: .5rem; padding: .25rem .5rem; }
 </style>

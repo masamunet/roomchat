@@ -16,6 +16,10 @@
 		<dd>{OPERATOR.phone}</dd>
 		<dt>メールアドレス</dt>
 		<dd>{OPERATOR.email}</dd>
+		<dt>電気通信事業届出番号</dt>
+		<dd>{OPERATOR.telecomRegistrationNumber}</dd>
+		<dt>適格請求書発行事業者登録番号</dt>
+		<dd>{OPERATOR.invoiceRegistrationNumber}</dd>
 		<dt>販売価格</dt>
 		<dd>
 			<ul>
