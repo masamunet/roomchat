@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import Seo from '$lib/components/Seo.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { Collapsible } from 'bits-ui';
 	import { fade } from 'svelte/transition';
@@ -7,9 +8,9 @@
 	import ChatInput from '$lib/components/ChatInput.svelte';
 	import QrOverlay from '$lib/components/QrOverlay.svelte';
 	import QrCodeDisplay from '$lib/components/QrCodeDisplay.svelte';
-	import SlackView from '$lib/components/chat/SlackView.svelte';
-	import LineView from '$lib/components/chat/LineView.svelte';
-	import NiconicoView from '$lib/components/chat/NiconicoView.svelte';
+	import ListView from '$lib/components/chat/ListView.svelte';
+	import BubbleView from '$lib/components/chat/BubbleView.svelte';
+	import DanmakuView from '$lib/components/chat/DanmakuView.svelte';
 	import ViewSwitcher from '$lib/components/chat/ViewSwitcher.svelte';
 	import type { Message, ChatViewMode } from '$lib/types/index.js';
 
@@ -25,7 +26,7 @@
 			return updated && updated !== msg.nickname ? { ...msg, nickname: updated } : msg;
 		})
 	);
-	let viewMode = $state<ChatViewMode>('slack');
+	let viewMode = $state<ChatViewMode>('list');
 	let showQrOverlay = $state(false);
 	let chatScreen = $state<HTMLDivElement>();
 	let fullscreenButton = $state<HTMLButtonElement | null>(null);
@@ -88,10 +89,18 @@
 	let nicknameEditTimer: ReturnType<typeof setTimeout> | null = null;
 
 	onMount(() => {
-		// Restore view mode
+		// Restore view mode (migrate legacy identifiers if stored)
+		const legacyModeMap: Record<string, ChatViewMode> = {
+			slack: 'list',
+			line: 'bubble',
+			niconico: 'danmaku'
+		};
 		const saved = localStorage.getItem('roomchat_view_mode');
-		if (saved === 'slack' || saved === 'line' || saved === 'niconico') {
+		if (saved === 'list' || saved === 'bubble' || saved === 'danmaku') {
 			viewMode = saved;
+		} else if (saved && saved in legacyModeMap) {
+			viewMode = legacyModeMap[saved];
+			localStorage.setItem('roomchat_view_mode', viewMode);
 		}
 
 		// Check if nickname edit window has passed
@@ -264,9 +273,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{data.room.name} - RoomChat</title>
-</svelte:head>
+<Seo title="{data.room.name} - RoomChat" noindex={true} />
 
 <svelte:window onkeydown={handleScreenKeydown} />
 <svelte:document onfullscreenchange={syncFullscreen} />
@@ -290,7 +297,7 @@
 					<span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium tabular-nums text-slate-500">{chronologicalMessages.length}件</span>
 				</div>
 				<p class="px-5 pt-3 text-xs leading-relaxed text-slate-400">読み込み済みのメッセージを古い順に表示</p>
-				<SlackView messages={chronologicalMessages} currentParticipantId={data.participant.id} followLatest />
+				<ListView messages={chronologicalMessages} currentParticipantId={data.participant.id} followLatest />
 			</aside>
 		</Collapsible.Content>
 	</Collapsible.Root>
@@ -375,12 +382,12 @@
 		<ChatBackground>
 		{#key viewMode}
 			<div class="flex-1 flex flex-col min-h-0" transition:fade={{ duration: 150 }}>
-				{#if viewMode === 'slack'}
-					<SlackView messages={allMessages} currentParticipantId={data.participant.id} />
-				{:else if viewMode === 'line'}
-					<LineView messages={allMessages} currentParticipantId={data.participant.id} />
+				{#if viewMode === 'list'}
+					<ListView messages={allMessages} currentParticipantId={data.participant.id} />
+				{:else if viewMode === 'bubble'}
+					<BubbleView messages={allMessages} currentParticipantId={data.participant.id} />
 				{:else}
-					<NiconicoView messages={allMessages} currentParticipantId={data.participant.id} />
+					<DanmakuView messages={allMessages} currentParticipantId={data.participant.id} />
 				{/if}
 			</div>
 		{/key}

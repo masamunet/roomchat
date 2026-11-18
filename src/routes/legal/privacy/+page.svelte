@@ -4,7 +4,11 @@
 	import { ARCHIVE_RETENTION_YEARS } from '$lib/plans.js';
 </script>
 
-<LegalPage title="プライバシーポリシー" updated="2026年10月20日">
+<LegalPage
+	title="プライバシーポリシー"
+	description="RoomChatのプライバシーポリシー。取得する情報、利用目的、Cookieの取り扱い、データの保管期間などについて定めています。"
+	updated="2026年10月20日"
+>
 	<p>{OPERATOR.name}（以下「当社」）は、「RoomChat」（以下「本サービス」）における利用者の情報を、以下のとおり取り扱います。</p>
 
 	<h2>1. 取得する情報</h2>

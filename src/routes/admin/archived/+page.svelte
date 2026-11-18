@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Seo from '$lib/components/Seo.svelte';
 	import { ARCHIVE_CSV_PLAN, ARCHIVE_RETENTION_YEARS, formatYen } from '$lib/plans.js';
 	import PurchaseConfirmDialog, { type PurchaseItem } from '$lib/components/PurchaseConfirmDialog.svelte';
 	import { addYears, format } from 'date-fns';
@@ -8,9 +9,7 @@
 	let purchase = $state<PurchaseItem | null>(null);
 </script>
 
-<svelte:head>
-	<title>過去のチャットルーム - RoomChat</title>
-</svelte:head>
+<Seo title="過去のチャットルーム - RoomChat" noindex={true} />
 
 <div class="max-w-2xl mx-auto px-4 py-6">
 	<a href="/admin" class="text-sm text-blue-600 hover:underline">&larr; ルーム管理に戻る</a>

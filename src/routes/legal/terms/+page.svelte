@@ -4,7 +4,11 @@
 	import { FREE_ROOM_HOURS } from '$lib/plans.js';
 </script>
 
-<LegalPage title="利用規約" updated="2026年10月20日">
+<LegalPage
+	title="利用規約"
+	description="RoomChatの利用規約。サービスの利用条件、アカウント、有料オプション、禁止事項などについて定めています。"
+	updated="2026年10月20日"
+>
 	<p>この利用規約（以下「本規約」）は、{OPERATOR.name}（以下「当社」）が提供する「RoomChat」（以下「本サービス」）の利用条件を定めるものです。利用者は本規約に同意したうえで本サービスを利用するものとします。</p>
 
 	<h2>第1条（本サービスの内容）</h2>

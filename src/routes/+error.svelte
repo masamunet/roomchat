@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import Seo from '$lib/components/Seo.svelte';
 </script>
 
-<svelte:head>
-	<title>エラー - RoomChat</title>
-</svelte:head>
+<Seo title="エラー - RoomChat" noindex={true} />
 
 <div class="flex flex-col items-center justify-center min-h-[calc(100dvh-60px)] px-4">
 	<div class="ui-card w-full max-w-sm p-8 text-center">

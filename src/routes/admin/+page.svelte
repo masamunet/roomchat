@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import Seo from '$lib/components/Seo.svelte';
 	import { enhance } from '$app/forms';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
@@ -10,9 +11,7 @@
 	let deleteFormRefs: Record<string, HTMLFormElement> = {};
 </script>
 
-<svelte:head>
-	<title>ルーム管理 - RoomChat</title>
-</svelte:head>
+<Seo title="ルーム管理 - RoomChat" noindex={true} />
 
 <div class="max-w-2xl mx-auto px-4 py-6">
 	<h1 class="text-2xl font-bold text-gray-900 mb-6">ルーム管理</h1>

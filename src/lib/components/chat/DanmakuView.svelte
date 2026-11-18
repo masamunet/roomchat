@@ -74,7 +74,7 @@
 		}
 
 		const el = document.createElement('div');
-		el.className = 'niconico-comment';
+		el.className = 'danmaku-comment';
 		el.setAttribute('aria-hidden', 'true');
 		const lines = msg.content.split('\n');
 		const displayContent = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '...' : '');
@@ -124,7 +124,7 @@
 <div bind:this={liveRegion} aria-live="polite" class="sr-only"></div>
 
 <style>
-	:global(.niconico-comment) {
+	:global(.danmaku-comment) {
 		position: absolute;
 		left: 100%;
 		white-space: pre;
@@ -134,12 +134,12 @@
 		text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), -1px -1px 2px rgba(0, 0, 0, 0.8);
 		pointer-events: none;
 		will-change: transform;
-		animation-name: niconico-scroll;
+		animation-name: danmaku-scroll;
 		animation-timing-function: linear;
 		animation-fill-mode: forwards;
 	}
 
-	@keyframes niconico-scroll {
+	@keyframes danmaku-scroll {
 		to {
 			transform: translateX(calc(-100vw - 100%));
 		}

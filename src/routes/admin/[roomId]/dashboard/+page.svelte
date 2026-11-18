@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Seo from '$lib/components/Seo.svelte';
 	import { format } from 'date-fns';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
 	import { formatYen } from '$lib/plans.js';
@@ -43,9 +44,7 @@
 	const silent = $derived(stats.participants.filter((p) => p.messages === 0).length);
 </script>
 
-<svelte:head>
-	<title>{data.room.name} のダッシュボード - RoomChat</title>
-</svelte:head>
+<Seo title="{data.room.name} のダッシュボード - RoomChat" noindex={true} />
 
 <div class="max-w-3xl mx-auto px-4 py-6">
 	<a href="/admin/{data.room.id}" class="text-sm text-blue-600 hover:text-blue-800 mb-4 inline-block">&larr; ルーム詳細に戻る</a>

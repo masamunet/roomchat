@@ -4,7 +4,11 @@
 	import { ROOM_EXTENSION_PLANS, ARCHIVE_CSV_PLAN, formatYen } from '$lib/plans.js';
 </script>
 
-<LegalPage title="特定商取引法に基づく表記" updated="2026年10月17日">
+<LegalPage
+	title="特定商取引法に基づく表記"
+	description="RoomChatの特定商取引法に基づく表記。販売業者、販売価格、支払方法、提供時期、返品・キャンセル等について記載しています。"
+	updated="2026年10月17日"
+>
 	<dl>
 		<dt>販売業者</dt>
 		<dd>{OPERATOR.name}</dd>
@@ -16,6 +20,10 @@
 		<dd>{OPERATOR.phone}</dd>
 		<dt>メールアドレス</dt>
 		<dd>{OPERATOR.email}</dd>
+		<dt>電気通信事業届出番号</dt>
+		<dd>{OPERATOR.telecomRegistrationNumber}</dd>
+		<dt>適格請求書発行事業者登録番号</dt>
+		<dd>{OPERATOR.invoiceRegistrationNumber}</dd>
 		<dt>販売価格</dt>
 		<dd>
 			<ul>

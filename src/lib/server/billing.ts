@@ -25,7 +25,7 @@ export async function createCheckout(input: CheckoutInput): Promise<string> {
 		lookup_key: input.lookupKey
 	};
 
-	const session = await getStripe().checkout.sessions.create({
+	const params: Stripe.Checkout.SessionCreateParams & { managed_payments?: { enabled: boolean } } = {
 		mode: 'payment',
 		line_items: [{ price: priceId, quantity: 1 }],
 		customer_email: input.user.email,
@@ -35,13 +35,17 @@ export async function createCheckout(input: CheckoutInput): Promise<string> {
 		payment_intent_data: { metadata },
 		success_url: `${input.origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
 		cancel_url: `${input.origin}${input.cancelPath}`,
+		// Disable Managed Payments so custom_text (特定商取引法 第12条の6) and direct refunds work as configured.
+		managed_payments: { enabled: false },
 		// Checkout is the final confirmation screen, so it repeats the delivery and cancellation terms.
 		custom_text: {
 			submit: { message: `${DELIVERY_TIMING}${CANCELLATION_POLICY[input.kind]}` }
 		},
 		// Short-lived so an extension is rarely paid for after its room has expired.
 		expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRES_MINUTES * 60
-	});
+	};
+
+	const session = await getStripe().checkout.sessions.create(params);
 
 	await createPendingPayment({
 		stripeCheckoutSessionId: session.id,
