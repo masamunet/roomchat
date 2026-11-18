@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import Seo from '$lib/components/Seo.svelte';
 	import { onDestroy } from 'svelte';
 	import QrCode from '$lib/components/QrCodeDisplay.svelte';
 	import { getRemainingTime } from '$lib/utils/remaining-time.js';
@@ -43,9 +44,7 @@
 
 </script>
 
-<svelte:head>
-	<title>{data.room.name} - RoomChat</title>
-</svelte:head>
+<Seo title="{data.room.name} - RoomChat" noindex={true} />
 
 <div class="max-w-md mx-auto px-4 py-6">
 	<a href="/admin" class="text-sm text-blue-600 hover:text-blue-800 mb-4 inline-block">&larr; ルーム一覧に戻る</a>

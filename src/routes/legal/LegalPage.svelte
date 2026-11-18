@@ -1,11 +1,15 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	let { title, updated, children }: { title: string; updated: string; children: Snippet } = $props();
+	import Seo from '$lib/components/Seo.svelte';
+	let {
+		title,
+		description,
+		updated,
+		children
+	}: { title: string; description?: string; updated: string; children: Snippet } = $props();
 </script>
 
-<svelte:head>
-	<title>{title} - RoomChat</title>
-</svelte:head>
+<Seo title="{title} - RoomChat" {description} ogType="article" />
 
 <article class="legal max-w-2xl mx-auto px-4 py-8 text-sm leading-relaxed text-gray-700">
 	<h1 class="text-2xl font-bold text-gray-900 mb-1">{title}</h1>

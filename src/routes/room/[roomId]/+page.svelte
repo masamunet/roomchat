@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import Seo from '$lib/components/Seo.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { Collapsible } from 'bits-ui';
 	import { fade } from 'svelte/transition';
@@ -272,9 +273,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{data.room.name} - RoomChat</title>
-</svelte:head>
+<Seo title="{data.room.name} - RoomChat" noindex={true} />
 
 <svelte:window onkeydown={handleScreenKeydown} />
 <svelte:document onfullscreenchange={syncFullscreen} />

@@ -1,13 +1,16 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import Seo from '$lib/components/Seo.svelte';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
 </script>
 
-<svelte:head>
-	<title>{data.room.name}に参加 - RoomChat</title>
-</svelte:head>
+<Seo
+	title="{data.room.name}に参加 - RoomChat"
+	description="招待コードで「{data.room.name}」のチャットルームに匿名で参加できます。"
+	noindex={true}
+/>
 
 <div class="flex flex-col items-center justify-center min-h-[calc(100dvh-60px)] px-4">
 	<div class="ui-card w-full max-w-sm p-7 sm:p-8">

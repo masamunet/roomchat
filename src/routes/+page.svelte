@@ -1,7 +1,26 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import Seo from '$lib/components/Seo.svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { ARCHIVE_CSV_PLAN, FREE_ROOM_HOURS, ROOM_EXTENSION_PLANS, formatYen } from '$lib/plans.js';
+
+	const jsonLd = $derived({
+		'@context': 'https://schema.org',
+		'@type': 'WebApplication',
+		name: 'RoomChat',
+		url: page.url.origin,
+		applicationCategory: 'CommunicationApplication',
+		operatingSystem: 'All',
+		inLanguage: 'ja',
+		description:
+			'4文字の招待コードを共有するだけで、登録不要・匿名ですぐに参加できるリアルタイムチャット。Slack・LINE・ニコニコ風の3つの表示モードに対応。',
+		offers: {
+			'@type': 'Offer',
+			price: '0',
+			priceCurrency: 'JPY'
+		}
+	});
 
 	let inviteCode = $state('');
 	let error = $state('');
@@ -18,9 +37,11 @@
 	}
 </script>
 
-<svelte:head>
-	<title>RoomChat</title>
-</svelte:head>
+<Seo
+	title="RoomChat - 招待コードですぐに始められるリアルタイム匿名チャット"
+	ogTitle="RoomChat"
+	{jsonLd}
+/>
 
 <div class="flex flex-col items-center justify-center gap-6 min-h-[calc(100dvh-60px)] px-4 py-8">
 	<div class="ui-card w-full max-w-sm p-7 sm:p-8">
